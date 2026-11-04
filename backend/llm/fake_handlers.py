@@ -213,6 +213,22 @@ def suggest_node(messages: list[ChatMessage], schema: Any = None) -> dict[str, A
     return file_note(messages, schema)
 
 
+def node_cards(messages: list[ChatMessage], schema: Any = None) -> dict[str, Any]:
+    text = messages[-1].content
+    m = re.search(r'Note:\n"""(.*?)"""', text, re.S)
+    if m:
+        note = m.group(1).strip()
+        return {"cards": [{"front": f"What does this note say: {note[:60]}?", "back": note, "slide": 0}]}
+    existing = text.split("existing cards:")[-1].split("\n")[0].lower()
+    cards = []
+    for n, line in _lines(_slides_in(messages)):
+        front = f"Recall: {line}?"
+        if front.lower() in existing:
+            continue
+        cards.append({"front": front, "back": line, "slide": n})
+    return {"cards": cards[:3]}
+
+
 def default_handlers() -> dict[str, Any]:
     return {
         "*": _echo,
@@ -227,6 +243,7 @@ def default_handlers() -> dict[str, Any]:
         "grade_answer": grade_answer,
         "file_note": file_note,
         "suggest_node": suggest_node,
+        "node_cards": node_cards,
         "generate_questions": _generate("questions"),
         "generate_flashcards": _generate("flashcards"),
         "generate_summary": _generate("summary"),
