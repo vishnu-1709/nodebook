@@ -229,6 +229,32 @@ def node_cards(messages: list[ChatMessage], schema: Any = None) -> dict[str, Any
     return {"cards": cards[:3]}
 
 
+_SYNONYMS = [{"ols", "least squares"}, {"sgd", "stochastic gradient descent"}, {"l2", "ridge regression"}, {"l1", "lasso regression"}]
+
+
+def recall_judge(messages: list[ChatMessage], schema: Any = None) -> dict[str, Any]:
+    pairs = re.findall(r"expected: '(.*?)' · typed: '(.*?)'", messages[-1].content)
+    out = []
+    for exp, typed in pairs:
+        e, t = exp.lower(), typed.lower()
+        same = any(e in g and t in g for g in _SYNONYMS) or (t and (t in e or e in t))
+        out.append({"same": bool(same)})
+    return {"verdicts": out}
+
+
+def explain_back_review(messages: list[ChatMessage], schema: Any = None) -> dict[str, Any]:
+    text = messages[-1].content
+    m = re.search(r'explanation:\n"""(.*?)"""', text, re.S)
+    said = set(re.findall(r"[a-z]{4,}", (m.group(1) if m else "").lower()))
+    covered, missing = [], []
+    for n, line in _lines(_slides_in(messages)):
+        words = set(re.findall(r"[a-z]{4,}", line.lower()))
+        (covered if words & said else missing).append((n, line))
+    total = max(1, len(covered) + len(missing))
+    return {"covered": [l for _, l in covered], "missing": [{"point": l, "slide": n} for n, l in missing],
+            "wrong": [], "score": round(len(covered) / total, 2)}
+
+
 def default_handlers() -> dict[str, Any]:
     return {
         "*": _echo,
@@ -244,6 +270,8 @@ def default_handlers() -> dict[str, Any]:
         "file_note": file_note,
         "suggest_node": suggest_node,
         "node_cards": node_cards,
+        "recall_judge": recall_judge,
+        "explain_back_review": explain_back_review,
         "generate_questions": _generate("questions"),
         "generate_flashcards": _generate("flashcards"),
         "generate_summary": _generate("summary"),
