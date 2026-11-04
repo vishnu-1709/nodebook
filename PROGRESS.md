@@ -1,6 +1,6 @@
 # Nodebook — Progress
 
-## Current milestone: M10 — Blank-map recall + explain-it-back
+## Current milestone: M11 — Performance-based status + course progress
 
 **v0.1 is feature-complete (M1–M8).** See "For the user to test locally" for the 1-week checkpoint.
 
@@ -97,11 +97,20 @@
   lecture ⋯ "Export to Anki".
 - Tests: 98 pytest, 23 vitest.
 
+- M10 complete: `backend/pipeline/recall.py` — blank-map recall: exact/fuzzy (difflib + token Jaccard
+  ≥ 0.86) decided locally, everything else (near-misses, synonyms) batched to `recall_judge.md`;
+  blank = wrong; one `results.jsonl` row per node (kind recall). Explain-it-back with
+  `explain_back_review.md`: covered / missing / wrong with slide citations + score (kind explain).
+  UI: "Recall test: rebuild this map" (full screen, boxes per position with slide hints, elbow
+  connectors, green/orange results with the real label), Explain it back dialog (panel link + Focus
+  test card).
+- Tests: 101 pytest, 23 vitest.
+
 ### Next 3 steps
-1. M10: blank-map recall (labels hidden; type label per node position; fuzzy match then LLM
-   `recall_judge` for near-misses; score per node → results.jsonl)
-2. M10: explain-it-back (`explain_back_review`: what's missing/wrong with slide citations → results)
-3. M11: performance-based status (rules in one place) + course progress
+1. M11: status rules in one module (`core/status.py`): auto once ≥ 3 results; got_it / confused /
+   revising rules from SPEC §5.14; manual override sets manual; recompute after each result/rating
+2. M11: course progress overview using these statuses (Course page + Today)
+3. M12: Today v0.2 (fading soon, weekly line), .ics export, pomodoro quick brain check
 
 ## UI alignment (UI.md is the source of truth)
 - Done in branch `ui-align`: new tokens (UI.md §1), shared components (buttons incl. dark, pill chips,
@@ -129,6 +138,8 @@
 | Collapsible sidebar | (UI.md §2) | ✅ 56px rail with bold "N" (expands on click), icons + course initials with tooltips, inbox badge visible, Ctrl/Cmd+B, remembered per screen type, lecture map opens collapsed (`rail-light.png`) |
 | Map editing controls | (UI.md §3.2) | ✅ double-click/F2 rename inline (never Focus), Tab/Enter add, Delete/Backspace with undo toast, drag, arrow collapse, F = Focus, Ctrl/Cmd+Z / Shift+Z synced to the server; right-click Rename · Add child · Add sibling · AI … · Delete; ? lists map keys |
 | Review session | `review-session.png` | ✅ no sidebar, header counts + `n / N`, 4px progress, centred card (path + status, 24/600 question, divider, answer), 4 rating buttons h64 with intervals, `1 2 3 4 · space` hint |
+| Blank-map recall | (SPEC §5.13; map style per §3.2) | ✅ full screen, sidebar-free, boxed positions + orthogonal connectors, results in status colours |
+| Explain it back | (SPEC §5.13) | ✅ modal; missing/wrong with slide chips |
 | Today | `today.png` | ✅ header + actions, next-action cards (v0.1: Weak topics + Next exam), Upcoming reminders card (tag filter, overdue in confused colour, complete checkbox), lectures card with stacked bars + legend + dashed add |
 | Reminder popover | (UI.md §3.9) | ✅ parsed date + tag chips before confirm, optional link to current topic |
 | Break screen | (UI.md §3.9) | ✅ full overlay, remaining time, Skip break |

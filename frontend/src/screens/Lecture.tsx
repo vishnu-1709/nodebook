@@ -9,6 +9,7 @@ import { useKeptCounts } from "../api/threads";
 import type { MapDoc, SlideRef } from "../api/types";
 import { onShortcut, useUi } from "../app/store";
 import { ContextMenu, type MenuItem } from "../components/ContextMenu";
+import { ExplainBack } from "../components/ExplainBack";
 import { JobProgress } from "../components/JobProgress";
 import { LectureNotesView, LectureSourcesView } from "../components/LectureTabs";
 import { MapView, type MindInstance } from "../components/MapView";
@@ -59,6 +60,7 @@ export function LectureScreen() {
   const me = useRef<MindInstance | null>(null);
   const [focus, setFocus] = useState(false);
   const [testMe, setTestMe] = useState<string | null>(null);
+  const [explain, setExplain] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const counts = useKeptCounts(courseId, lectureId, status === "ready");
 
@@ -160,6 +162,7 @@ export function LectureScreen() {
           <>
             {(muts.structure.isPending || muts.suggest.isPending) && <span className="small muted">{muts.suggest.isPending ? "Asking the model…" : "Saving…"}</span>}
             <span className="hint">G generate · N note</span>
+            {doc && <Link className="btn btn-sm" to={`/course/${courseId}/lecture/${lectureId}/recall`}>Recall test: rebuild this map</Link>}
             <button className="btn btn-sm" aria-label="More actions" onClick={(e) => setMoreMenu({ x: e.clientX - 200, y: e.clientY + 12 })}>⋯</button>
           </>
         }
@@ -268,6 +271,7 @@ export function LectureScreen() {
             setDraft={(t) => setDrafts((d) => ({ ...d, [node.id]: t }))}
             keptCount={counts.data?.[node.id] ?? 0}
             onTestMe={() => setTestMe(node.id)}
+            onExplain={() => setExplain(node.id)}
             notesTab={<NotesTab courseId={courseId} lectureId={lectureId} nodeId={node.id} />}
             practiceTab={<PracticeTab courseId={courseId} lectureId={lectureId} nodeId={node.id} />}
           />
@@ -301,6 +305,10 @@ export function LectureScreen() {
       {testMe && doc?.nodes[testMe] && (
         <TestMe courseId={courseId} lectureId={lectureId} nodeId={testMe} nodeLabel={doc.nodes[testMe]!.label}
           onClose={() => setTestMe(null)} onPreview={(refs, start) => setPreview({ refs, start })} />
+      )}
+      {explain && doc?.nodes[explain] && (
+        <ExplainBack courseId={courseId} lectureId={lectureId} nodeId={explain} nodeLabel={doc.nodes[explain]!.label}
+          onClose={() => setExplain(null)} onPreview={(refs, start) => setPreview({ refs, start })} />
       )}
       {preview && <SlidePreview courseId={courseId} refs={preview.refs} start={preview.start} onClose={() => setPreview(null)} />}
     </div>

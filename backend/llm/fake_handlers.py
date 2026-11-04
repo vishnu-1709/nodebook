@@ -247,7 +247,8 @@ def explain_back_review(messages: list[ChatMessage], schema: Any = None) -> dict
     m = re.search(r'explanation:\n"""(.*?)"""', text, re.S)
     said = set(re.findall(r"[a-z]{4,}", (m.group(1) if m else "").lower()))
     covered, missing = [], []
-    for n, line in _lines(_slides_in(messages)):
+    slides_part = text.split("Student's explanation:")[0]
+    for n, line in _lines([(int(k), b.strip()) for k, b in _SLIDE_RE.findall(slides_part)]):
         words = set(re.findall(r"[a-z]{4,}", line.lower()))
         (covered if words & said else missing).append((n, line))
     total = max(1, len(covered) + len(missing))

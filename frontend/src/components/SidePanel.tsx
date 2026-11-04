@@ -23,6 +23,7 @@ interface Props {
   onPreview: (refs: SlideRef[], start: number) => void;
   onStatus: (s: Status) => void;
   onTestMe: () => void;
+  onExplain: () => void;
   draft: string;
   setDraft: (s: string) => void;
   notesTab: ReactNode;
@@ -95,6 +96,7 @@ export function SidePanel(p: Props) {
           </div>
         )}
         {!p.focus && <StatusSeg value={node.status} onChange={p.onStatus} />}
+        {!p.focus && <button className="link-btn explain-link" onClick={p.onExplain}>Explain it back in your own words →</button>}
 
         {p.focus && (
           <div className="focus-title-row">
@@ -111,6 +113,7 @@ export function SidePanel(p: Props) {
               <p className="test-card-title">Test yourself on this topic</p>
               <p className="test-card-sub small">3 recall questions from {slideRange(node.sources) || "this topic"} · about 2 min</p>
             </div>
+            <button className="btn btn-ghost test-card-alt" onClick={p.onExplain}>Explain it back</button>
             <button className="btn test-card-btn" onClick={p.onTestMe}>Test me</button>
           </div>
         )}
