@@ -5,6 +5,9 @@ import { anyModalOpen } from "../components/Modal";
 import { NewCourseDialog } from "../components/NewCourseDialog";
 import { QuickNote } from "../components/QuickNote";
 import { GeneratePanel } from "../components/GeneratePanel";
+import { PomodoroRunner } from "../components/PomodoroRunner";
+import { ReminderPopover } from "../components/ReminderPopover";
+import { toggle, usePomodoro } from "./pomodoro";
 import { ShortcutHelp } from "../components/ShortcutHelp";
 import { Sidebar } from "../components/Sidebar";
 import { actionFor } from "./shortcuts";
@@ -45,6 +48,11 @@ export function Shell() {
         case "reminder":
           if (!emitShortcut(action)) open(action);
           break;
+        case "pomodoro": {
+          const p = usePomodoro.getState();
+          p.set(toggle(p.s, Date.now()));
+          break;
+        }
         case "help":
           open(current === "help" ? "none" : "help");
           break;
@@ -66,6 +74,8 @@ export function Shell() {
       {overlay === "new_course" && <NewCourseDialog onClose={close} />}
       {overlay === "quick_note" && <QuickNote onClose={close} />}
       {overlay === "generate" && <GeneratePanel onClose={close} />}
+      {overlay === "reminder" && <ReminderPopover onClose={close} />}
+      <PomodoroRunner />
       {toast && <div className="app-toast" role="status">{toast}</div>}
     </div>
   );

@@ -1,6 +1,6 @@
 # Nodebook — Progress
 
-## Current milestone: M7 — Today + reminders + pomodoro
+## Current milestone: M8 — Onboarding + recommended models + executable (v0.1)
 
 ### Plan (M1)
 1. Backend core: `core/paths.py` (data-folder sandbox), `core/storage.py` (atomic JSON, per-file locks,
@@ -64,11 +64,20 @@
   Generate modal (G anywhere), D / → / S keys, "AI answer · check it" tag, "Mark answer as verified".
 - Tests: 71 pytest, 9 vitest.
 
+- M7 complete: reminders (`backend/core/reminders.py`: dateparser search, future preference, 09:00
+  default time, #tags, built-in + custom tags with colours, links), Today API (`core/today.py`: weak
+  nodes, per-lecture progress, overdue/today/next-7-days, exam countdown from nearest #exam, current
+  course), sessions.jsonl. UI: Today per §3.1, reminder popover (R), pomodoro chip in every header
+  with popover (presets, custom, pause/skip/stop), P shortcut, tab title, persisted across refresh,
+  notification permission asked once, break screen, "finish your thought" while typing (60 s),
+  nudges suppressed during a focus block.
+- Tests: 83 pytest, 19 vitest.
+
 ### Next 3 steps
-1. M7: reminders backend (dateparser natural language + #tags, built-in + custom tags, links), Today
-   API (weak nodes, lecture progress, upcoming, exam countdown)
-2. M7: Today screen + reminder quick-add (R) + reminders list
-3. M7: pomodoro (global chip, P, presets, persisted state, tab title, break screen, sessions.jsonl)
+1. M8: onboarding wizard (data folder → Ollama check → models), `config/recommended_models.json`,
+   RAM via psutil, model pull job with progress, "Test on my slides"
+2. M8: launcher (free port, single-instance lock, open browser), `scripts/build_exe.py` (PyInstaller)
+3. M8: GitHub Actions release workflow; README install docs; tag v0.1
 
 ## UI alignment (UI.md is the source of truth)
 - Done in branch `ui-align`: new tokens (UI.md §1), shared components (buttons incl. dark, pill chips,
@@ -88,12 +97,14 @@
 ### Screen check log (light + dark screenshots in `docs/ui/screens/`)
 | Screen | Mockup | Result |
 |---|---|---|
-| Lecture map + panel | `map-side-panel.png` | ✅ boxed nodes at all levels, wrapping labels, status dots, dark root, fit to view |
+| Lecture map + panel | `map-side-panel.png` | ✅ boxed nodes at all levels, wrapping labels, status dots, dark root, fit to view; connectors are straight orthogonal elbows (stub → shared trunk → stub into child's left-centre), 2px `--line`, no curves (`components/connectors.ts`, unit-tested to emit only M/H/V) |
 | Focus mode | `focus-mode.png` | ✅ layout, Test yourself card, composer box |
 | Generate | `generate.png` | ✅ two columns, 2×2 Make cards, 3 action buttons, AI tag |
 | Course page | (UI.md §3.7) | ✅ tabs, stacked status bars, legend |
 | Quick note | (UI.md §3.9) | ✅ popover, destination chip |
-| Today | `today.png` | ⏳ rebuilt in M7 |
+| Today | `today.png` | ✅ header + actions, next-action cards (v0.1: Weak topics + Next exam), Upcoming reminders card (tag filter, overdue in confused colour, complete checkbox), lectures card with stacked bars + legend + dashed add |
+| Reminder popover | (UI.md §3.9) | ✅ parsed date + tag chips before confirm, optional link to current topic |
+| Break screen | (UI.md §3.9) | ✅ full overlay, remaining time, Skip break |
 | Review session | `review-session.png` | ⏳ M9 |
 
 ## Decisions
@@ -124,6 +135,9 @@
   (double-click opens Focus as the mockup says, so rename moved to F2); clicking the selected
   status again clears it to "Not started" (the 3-way control has no 4th button).
 - Mockup PNGs couldn't be saved from chat; `docs/ui/README.md` lists the expected file names.
+- Reminders with no date in the text need a date picked in the popover (no silent default).
+- Pomodoro state lives in localStorage (per browser) — survives refresh; sessions are logged to
+  `sessions.jsonl` when a focus block completes.
 - Derived slide data (extracted text + thumbnails) cached at `courses/<id>/derived/<source_id>/`
   (rebuildable from the source file; not in SPEC §3 layout).
 

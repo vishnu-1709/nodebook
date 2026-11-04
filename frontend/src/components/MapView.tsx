@@ -3,6 +3,7 @@ import "mind-elixir/style.css";
 import { useEffect, useRef } from "react";
 import type { MapDoc } from "../api/types";
 import { ulid } from "../lib/ulid";
+import { mainBranch, subBranch } from "./connectors";
 import { fromMindElixir, toMindElixir, treeOf, type NodeMeta, type TreeIn } from "./mapData";
 
 export type MindInstance = MindElixir<NodeMeta>;
@@ -46,27 +47,16 @@ export function fitToView(inst: MindElixir<NodeMeta>, pad = 24): void {
   inst.scaleVal = s;
 }
 
-/** Boxed-node connector: parent's right edge → child's left edge (no underline style). */
-function subBranch(this: MindElixir, p: SubLineParams): string {
+function subElbow(this: MindElixir, p: SubLineParams): string {
   const gap = parseInt(this.container.style.getPropertyValue("--node-gap-x")) || 0;
-  const y1 = p.pT + p.pH / 2;
-  const y2 = p.cT + p.cH / 2;
-  if (p.direction === "lhs") {
-    const x1 = p.pL + gap;
-    const x2 = p.cL + p.cW - gap;
-    const mid = (x1 + x2) / 2;
-    return `M ${x1} ${y1} C ${mid} ${y1} ${mid} ${y2} ${x2} ${y2}`;
-  }
-  const x1 = p.pL + p.pW - gap;
-  const x2 = p.cL + gap;
-  const mid = (x1 + x2) / 2;
-  return `M ${x1} ${y1} C ${mid} ${y1} ${mid} ${y2} ${x2} ${y2}`;
+  return subBranch(p, gap);
 }
 
 const THEME: Theme<NodeMeta> = {
   name: "Nodebook",
   palette: ["var(--line)"],
-  generateSubBranch: subBranch as Theme<NodeMeta>["generateSubBranch"],
+  generateMainBranch: mainBranch as Theme<NodeMeta>["generateMainBranch"],
+  generateSubBranch: subElbow as Theme<NodeMeta>["generateSubBranch"],
   cssVar: {
     "--node-gap-x": "24px",
     "--node-gap-y": "6px",

@@ -3,6 +3,7 @@ import { errorMessage } from "../api/client";
 import { postSSE } from "../api/sse";
 import { useThread, useThreadMutations } from "../api/threads";
 import type { Exchange, Message, MessageKind } from "../api/types";
+import { usePomodoro } from "../app/pomodoro";
 
 interface Props {
   courseId: string;
@@ -51,6 +52,7 @@ export function ThreadTab({ courseId, lectureId, nodeId, nodeLabel, draft, setDr
   const [undo, setUndo] = useState<{ id: string; timer: number } | null>(null);
   const [declined, setDeclined] = useState<Set<string>>(new Set());
   const [flash, setFlash] = useState("");
+  const inSession = usePomodoro((p) => p.s.phase === "work" && p.s.running);
   const abort = useRef<AbortController | null>(null);
   const lastReq = useRef<{ action: Action; exchangeId: string | null; content: string } | null>(null);
   const bottom = useRef<HTMLDivElement>(null);
@@ -156,7 +158,7 @@ export function ThreadTab({ courseId, lectureId, nodeId, nodeLabel, draft, setDr
           <button className="link-muted follow-up" onClick={() => setActive(ex.id)}>Follow up</button>
         )}
         {!isLive && active === ex.id && <span className="xsmall muted">Your next message continues this</span>}
-        {!isKept && !isLive && userTurns(ex) >= 3 && !declined.has(ex.id) && (
+        {!isKept && !isLive && !inSession && userTurns(ex) >= 3 && !declined.has(ex.id) && (
           <div className="keep-nudge row">
             <span className="grow">Keep this?</span>
             <button className="btn btn-sm" onClick={() => muts.keep.mutate(ex.id)}>Keep</button>

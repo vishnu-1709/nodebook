@@ -131,3 +131,30 @@
 .settings-form { max-width: 640px; }
 @media (max-width: 900px) { .settings-layout { grid-template-columns: 1fr; } .settings-nav { flex-direction: row; flex-wrap: wrap; } }
 .quick-input { resize: none; min-height: 44px; font-size: 15px; }
+.pomo { position: relative; }
+.pomo-pop {
+  position: absolute; right: 0; top: calc(100% + 6px); z-index: 45; width: 240px; padding: var(--space-3);
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-card); box-shadow: var(--popover-shadow);
+  display: flex; flex-direction: column; gap: var(--space-2);
+}
+.pomo-big { font-size: 28px; }
+.pomo-num { width: 64px; min-height: 32px; padding: 2px 6px; }
+.break-screen { position: fixed; inset: 0; z-index: 80; background: var(--ground); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-5); }
+.break-title { font-size: 22px; font-weight: 600; color: var(--text); text-align: center; padding: 0 var(--space-4); }
+.break-time { font-size: 40px; color: var(--text-2); }
+.finish-banner { position: fixed; top: var(--space-3); left: 50%; transform: translateX(-50%); z-index: 75; background: var(--ink); color: var(--on-ink); padding: var(--space-2) var(--space-4); border-radius: var(--r-btn); font-size: 14px; }
+.date-chip { font-family: var(--font-mono); font-size: 12px; }
+/* Today — UI.md §3.1 */
+.today { gap: var(--space-5); }
+.next-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--space-4); }
+.next-card { display: flex; flex-direction: column; gap: var(--space-2); }
+.next-kicker { font-size: 13px; font-weight: 600; color: var(--text-2); }
+.next-big { font-size: 36px; font-weight: 700; line-height: 1.1; color: var(--text); }
+.confused-text { color: var(--status-confused-text); }
+.weak-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
+.reminder-row { gap: var(--space-3); min-height: 48px; }
+.tag-chip { font-size: 12px; padding: 2px 8px; border-radius: var(--r-chip); border: 1px solid currentColor; }
+.tag-chip.tag-1 { color: var(--tag-1); } .tag-chip.tag-2 { color: var(--tag-2); } .tag-chip.tag-3 { color: var(--status-confused-text); }
+.tag-chip.tag-4 { color: var(--tag-4); } .tag-chip.tag-5 { color: var(--tag-5); } .tag-chip.tag-6 { color: var(--tag-6); }
+.today-row { grid-template-columns: minmax(160px, 1.2fr) 2fr 90px; }
+.today-row .lecture-link { text-align: left; font-size: 15px; }

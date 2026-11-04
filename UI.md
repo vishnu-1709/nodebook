@@ -99,7 +99,10 @@ Never pure black or pure white backgrounds in dark mode.
 | Selected | `--accent-soft` bg, 2px `--accent` border, 600 |
 | Hover | border `--accent` at 50% |
 - Inside each node: status dot (left) · label (wraps, max-width 220px, **never truncated**) · kept-question badge (right, only if > 0).
-- **Connectors:** 2px `--line`. Elbow or smooth curves both fine; no underline-style nodes.
+- **Connectors:** straight elbow (orthogonal) lines only, exactly like `docs/ui/map-side-panel.png`.
+  From the parent's right edge: horizontal stub → vertical trunk spanning all children →
+  horizontal stub into each child's left edge, at the child's vertical centre. 2px `var(--line)`,
+  square or ≤ 4px rounded corners. No curves, no diagonals, no underline-style nodes.
 - Layout: root left, children to the right (Mind-Elixir right-side layout). On load and after regenerate: **fit to view**.
 - New node default label "New topic", opens straight into edit mode.
 - Right-click menu: Expand · Split · Merge with… · Simplify · Delete. AI results show a preview diff (green new nodes) with Apply / Cancel.

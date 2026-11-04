@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { errorMessage } from "../api/client";
 import { useCourse } from "../api/hooks";
@@ -48,7 +48,8 @@ export function LectureScreen() {
   const setContext = useUi((s) => s.setContext);
   const openOverlay = useUi((s) => s.open);
   const [view, setView] = useState<View>("map");
-  const [selected, setSelected] = useState<string | null>(null);
+  const [search] = useSearchParams();
+  const [selected, setSelected] = useState<string | null>(search.get("node"));
   const [preview, setPreview] = useState<{ refs: SlideRef[]; start: number } | null>(null);
   const [hideCoverage, setHideCoverage] = useState(false);
   const [menu, setMenu] = useState<{ id: string; x: number; y: number } | null>(null);
