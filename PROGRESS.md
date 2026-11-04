@@ -1,6 +1,6 @@
 # Nodebook — Progress
 
-## Current milestone: M6 — Generate panel
+## Current milestone: M7 — Today + reminders + pomodoro
 
 ### Plan (M1)
 1. Backend core: `core/paths.py` (data-folder sandbox), `core/storage.py` (atomic JSON, per-file locks,
@@ -56,11 +56,19 @@
   the top modal; shortcuts pause while a modal is open).
 - Tests: 63 pytest, 9 vitest.
 
+- M6 complete: `backend/pipeline/generate.py` + `api/generate.py`, prompts `generate_items.md` (one
+  section per type) and `suggest_node.md`. One item at a time from chosen lectures + shelf files; source
+  window rotates per Next; server rejects repeats (client echoes `key`s in `exclude`). PYQ sources set
+  "… style" refs. Save: question/card → practice.json (node or course-level `practice.json`), summary →
+  node/lecture note, explanation → kept exchange on node. Check my answer via `grade_answer`. UI:
+  Generate modal (G anywhere), D / → / S keys, "AI answer · check it" tag, "Mark answer as verified".
+- Tests: 71 pytest, 9 vitest.
+
 ### Next 3 steps
-1. M6: Generate backend — `generate_items` + `suggest_node` prompts; sources picker (course sources +
-   lectures), types (questions / flashcards / summary / explain), steer chips; no repeats per session
-2. M6: Save destinations (practice.json, node/lecture note, kept exchange) with origin; check-my-answer
-3. M6: Generate panel UI (G from anywhere, D / → / S keys)
+1. M7: reminders backend (dateparser natural language + #tags, built-in + custom tags, links), Today
+   API (weak nodes, lecture progress, upcoming, exam countdown)
+2. M7: Today screen + reminder quick-add (R) + reminders list
+3. M7: pomodoro (global chip, P, presets, persisted state, tab title, break screen, sessions.jsonl)
 
 ## Decisions
 - **Integration branch:** the cloud harness only allows pushing to `claude/gallant-cray-mdaoqn`, so that
@@ -83,6 +91,9 @@
 - Follow-ups continue the selected exchange ("Follow up"); a new question starts a new exchange.
 - Inbox suggestions are requested lazily when the inbox screen is open (capture stays < 1 s).
 - Grading a blank answer is always "wrong" regardless of the model.
+- Course-level practice items (Generate "unassigned") live in `courses/<id>/practice.json`
+  (not in SPEC §3 layout; same shape as lecture practice.json).
+- Generated summaries/explanations show an "AI-written · check it" tag too.
 - Derived slide data (extracted text + thumbnails) cached at `courses/<id>/derived/<source_id>/`
   (rebuildable from the source file; not in SPEC §3 layout).
 

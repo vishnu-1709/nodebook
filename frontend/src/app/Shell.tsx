@@ -4,6 +4,7 @@ import { useSettings } from "../api/hooks";
 import { anyModalOpen } from "../components/Modal";
 import { NewCourseDialog } from "../components/NewCourseDialog";
 import { QuickNote } from "../components/QuickNote";
+import { GeneratePanel } from "../components/GeneratePanel";
 import { ShortcutHelp } from "../components/ShortcutHelp";
 import { Sidebar } from "../components/Sidebar";
 import { actionFor } from "./shortcuts";
@@ -64,6 +65,7 @@ export function Shell() {
       {overlay === "help" && <ShortcutHelp onClose={close} />}
       {overlay === "new_course" && <NewCourseDialog onClose={close} />}
       {overlay === "quick_note" && <QuickNote onClose={close} />}
+      {overlay === "generate" && <GeneratePanel onClose={close} />}
       {toast && <div className="app-toast" role="status">{toast}</div>}
     </div>
   );

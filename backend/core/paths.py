@@ -88,6 +88,10 @@ class DataPaths:
     def course_notes(self, course_id: str) -> Path:
         return self.course_dir(course_id) / "notes.json"
 
+    def course_practice(self, course_id: str) -> Path:
+        """Practice items saved at course level (no node fits)."""
+        return self.course_dir(course_id) / "practice.json"
+
     def review_log(self, course_id: str) -> Path:
         return self.course_dir(course_id) / "review_log.jsonl"
 

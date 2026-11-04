@@ -183,6 +183,36 @@ def file_note(messages: list[ChatMessage], schema: Any = None) -> dict[str, Any]
     return {"option": best}
 
 
+_SRC_RE = re.compile(r"\[Source (\d+) · page (\d+)\]\n(.*?)(?=\n\n\[Source|\n\n===|\Z)", re.S)
+
+
+def _generate(kind: str) -> Any:
+    def handler(messages: list[ChatMessage], schema: Any = None) -> dict[str, Any]:
+        system, user = messages[0].content, messages[-1].content
+        excluded = system.split("Do not repeat or rephrase any of these earlier items:")[-1].lower()
+        pyq = "PAST PAPER" in user
+        for src, page, body in _SRC_RE.findall(user):
+            lines = [ln.strip("•-* ").strip() for ln in body.splitlines() if ln.strip()]
+            for ln in lines[1:] or lines:
+                front = f"Explain: {ln}" if kind == "questions" else f"What is meant by: {ln}?"
+                title = lines[0] if lines else "Topic"
+                key = (front if kind in ("questions", "flashcards") else f"{title} - {ln}").lower()
+                if re.sub(r"[^a-z0-9]+", " ", key).strip() in re.sub(r"[^a-z0-9]+", " ", excluded):
+                    continue
+                cite = [{"source": int(src), "page": int(page)}]
+                ref = f"PYQ style (source {src})" if pyq else ""
+                if kind in ("questions", "flashcards"):
+                    return {"front": front, "back": f"From the slides: {ln}", "title": "", "body": "", "cites": cite, "ref": ref}
+                return {"front": "", "back": "", "title": title, "body": f"- {ln}", "cites": cite, "ref": ref}
+        return {"front": "", "back": "", "title": "", "body": "", "cites": [], "ref": ""}
+
+    return handler
+
+
+def suggest_node(messages: list[ChatMessage], schema: Any = None) -> dict[str, Any]:
+    return file_note(messages, schema)
+
+
 def default_handlers() -> dict[str, Any]:
     return {
         "*": _echo,
@@ -196,4 +226,9 @@ def default_handlers() -> dict[str, Any]:
         "test_me_generate": test_me_generate,
         "grade_answer": grade_answer,
         "file_note": file_note,
+        "suggest_node": suggest_node,
+        "generate_questions": _generate("questions"),
+        "generate_flashcards": _generate("flashcards"),
+        "generate_summary": _generate("summary"),
+        "generate_explain": _generate("explain"),
     }

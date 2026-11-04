@@ -1,8 +1,16 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "../api/client";
 import { useHistory, useNodePractice } from "../api/testme";
 
 export function PracticeTab({ courseId, lectureId, nodeId }: { courseId: string; lectureId: string; nodeId: string }) {
   const items = useNodePractice(courseId, lectureId, nodeId);
   const history = useHistory(courseId, lectureId, nodeId);
+  const qc = useQueryClient();
+  const verify = useMutation({
+    mutationFn: (id: string) =>
+      api(`/courses/${courseId}/lectures/${lectureId}/practice/${id}`, { method: "PATCH", json: { answer_status: "verified" } }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["practice", courseId, lectureId, nodeId] }),
+  });
   return (
     <div className="stack practice-tab">
       <section className="stack-tight">
@@ -13,7 +21,16 @@ export function PracticeTab({ courseId, lectureId, nodeId }: { courseId: string;
             <li key={it.id} className="note">
               <p className="small muted">{it.type === "card" ? "Card" : "Question"}{it.answer_status === "ai_unverified" ? " · AI answer · check it" : ""}</p>
               <p className="note-text"><strong>{it.front}</strong></p>
-              {it.back && <details><summary className="small muted">Answer</summary><p className="note-text">{it.back}</p></details>}
+              {it.back && (
+                <details>
+                  <summary className="small muted">Answer</summary>
+                  <p className="note-text">{it.back}</p>
+                  {it.answer_status === "ai_unverified" && (
+                    <button className="btn btn-ghost btn-sm" onClick={() => verify.mutate(it.id)}>Mark answer as verified</button>
+                  )}
+                </details>
+              )}
+              {it.origin.ref && <p className="small muted">{it.origin.ref}</p>}
             </li>
           ))}
         </ul>
