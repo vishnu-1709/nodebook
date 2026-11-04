@@ -11,3 +11,4 @@ fsrs>=4.0
 genanki>=0.13
 python-multipart>=0.0.9
 pytest>=8
+tzdata>=2024.1
