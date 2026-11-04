@@ -144,6 +144,45 @@ def node_answer(messages: list[ChatMessage], schema: Any = None) -> str:
     return f"Here is the answer from the slides{cite}: {q[:80]}"
 
 
+def test_me_generate(messages: list[ChatMessage], schema: Any = None) -> dict[str, Any]:
+    slides = _slides_in(messages)
+    m = re.search(r"Exactly (\d+) questions", messages[0].content)
+    count = int(m.group(1)) if m else 3
+    qs = []
+    for n, l in (_lines(slides) or [(n, _title(b)) for n, b in slides]):
+        qs.append({"question": f"Explain: {l}?", "slide": n})
+    while slides and len(qs) < count:
+        n = slides[0][0]
+        qs.append({"question": f"What is the key idea of slide {n} (variant {len(qs) + 1})?", "slide": n})
+    return {"questions": qs[:count]}
+
+
+def grade_answer(messages: list[ChatMessage], schema: Any = None) -> dict[str, Any]:
+    text = messages[-1].content
+    slides = [int(n) for n, _ in _SLIDE_RE.findall(text)]
+    answers = re.findall(r"Student answer: (.*)", text)
+    grades = []
+    for a in answers:
+        a = a.strip()
+        words = len(a.split()) if a != "(blank)" else 0
+        verdict = "correct" if words >= 4 else "partly" if words >= 2 else "wrong"
+        grades.append({"verdict": verdict, "feedback": f"Compare with the slide (slide {slides[0] if slides else 1}).",
+                       "slide": slides[0] if slides else None})
+    return {"grades": grades}
+
+
+def file_note(messages: list[ChatMessage], schema: Any = None) -> dict[str, Any]:
+    text = messages[-1].content
+    m = re.search(r'"""(.*?)"""', text, re.S)
+    note_words = set(re.findall(r"[a-z]{4,}", (m.group(1) if m else "").lower()))
+    best, best_score = 0, 0
+    for num, label in re.findall(r"^(\d+)\. (.+)$", text, re.M):
+        score = len(note_words & set(re.findall(r"[a-z]{4,}", label.lower())))
+        if score > best_score or (score == best_score and score > 0 and len(label) > 0):
+            best, best_score = int(num), score
+    return {"option": best}
+
+
 def default_handlers() -> dict[str, Any]:
     return {
         "*": _echo,
@@ -154,4 +193,7 @@ def default_handlers() -> dict[str, Any]:
         "node_merge": node_merge,
         "node_simplify": node_simplify,
         "node_answer": node_answer,
+        "test_me_generate": test_me_generate,
+        "grade_answer": grade_answer,
+        "file_note": file_note,
     }

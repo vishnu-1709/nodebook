@@ -9,6 +9,9 @@ import type { MapDoc, SlideRef } from "../api/types";
 import { onShortcut, useUi } from "../app/store";
 import { useKeptCounts } from "../api/threads";
 import { SidePanel } from "../components/SidePanel";
+import { NotesTab } from "../components/NotesTab";
+import { PracticeTab } from "../components/PracticeTab";
+import { TestMe } from "../components/TestMe";
 import { ContextMenu, type MenuItem } from "../components/ContextMenu";
 import { JobProgress } from "../components/JobProgress";
 import { MapView, type MindInstance } from "../components/MapView";
@@ -34,6 +37,7 @@ export function LectureScreen() {
   const [aiError, setAiError] = useState("");
   const me = useRef<MindInstance | null>(null);
   const [focus, setFocus] = useState(false);
+  const [testMe, setTestMe] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const counts = useKeptCounts(courseId, lectureId, status === "ready");
 
@@ -236,6 +240,9 @@ export function LectureScreen() {
             draft={drafts[node.id] ?? ""}
             setDraft={(t) => setDrafts((d) => ({ ...d, [node.id]: t }))}
             keptCount={counts.data?.[node.id] ?? 0}
+            onTestMe={() => setTestMe(node.id)}
+            notesTab={<NotesTab courseId={courseId} lectureId={lectureId} nodeId={node.id} />}
+            practiceTab={<PracticeTab courseId={courseId} lectureId={lectureId} nodeId={node.id} />}
           />
         )}
       </div>
@@ -259,6 +266,16 @@ export function LectureScreen() {
               },
             })
           }
+        />
+      )}
+      {testMe && doc?.nodes[testMe] && (
+        <TestMe
+          courseId={courseId}
+          lectureId={lectureId}
+          nodeId={testMe}
+          nodeLabel={doc.nodes[testMe]!.label}
+          onClose={() => setTestMe(null)}
+          onPreview={(refs, start) => setPreview({ refs, start })}
         />
       )}
       {preview && <SlidePreview courseId={courseId} refs={preview.refs} start={preview.start} onClose={() => setPreview(null)} />}

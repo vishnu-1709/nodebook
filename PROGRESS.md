@@ -1,6 +1,6 @@
 # Nodebook — Progress
 
-## Current milestone: M5 — Test me + notes/inbox
+## Current milestone: M6 — Generate panel
 
 ### Plan (M1)
 1. Backend core: `core/paths.py` (data-folder sandbox), `core/storage.py` (atomic JSON, per-file locks,
@@ -47,11 +47,20 @@
   draft per node survives; kept-count badges on map nodes; opening Focus updates last_studied_at.
 - Tests: 57 pytest, 9 vitest.
 
+- M5 complete: Test me (`backend/pipeline/testme.py`, prompts `test_me_generate.md`, `grade_answer.md`):
+  3 questions only from the node's slides (out-of-node slide refs are clamped), grading with verdict +
+  one-line feedback + slide, result appended to `results.jsonl`, history in the Practice tab. Notes
+  (`backend/core/notes.py`): node / lecture / course notes, capture to deepest context else inbox, inbox
+  AI filing (`file_note.md`) with one-tap File / Change / Delete, sidebar count. UI: Test me dialog,
+  Notes tab, Practice tab (cards + history), Quick note modal (N), app toast, modal stack (Esc closes
+  the top modal; shortcuts pause while a modal is open).
+- Tests: 63 pytest, 9 vitest.
+
 ### Next 3 steps
-1. M5: Test me — `test_me_generate` + `grade_answer` prompts, endpoints, results.jsonl, node history
-2. M5: notes — lecture/course notes CRUD, quick capture (N) to current context, inbox + `file_note`
-   suggestion, Notes tab in side panel, inbox screen with sidebar count
-3. M6: Generate panel
+1. M6: Generate backend — `generate_items` + `suggest_node` prompts; sources picker (course sources +
+   lectures), types (questions / flashcards / summary / explain), steer chips; no repeats per session
+2. M6: Save destinations (practice.json, node/lecture note, kept exchange) with origin; check-my-answer
+3. M6: Generate panel UI (G from anywhere, D / → / S keys)
 
 ## Decisions
 - **Integration branch:** the cloud harness only allows pushing to `claude/gallant-cray-mdaoqn`, so that
@@ -72,6 +81,8 @@
 - AI node actions use the study model (they're small, frequent calls).
 - Thread answers render as plain text (no Markdown library in SPEC §2).
 - Follow-ups continue the selected exchange ("Follow up"); a new question starts a new exchange.
+- Inbox suggestions are requested lazily when the inbox screen is open (capture stays < 1 s).
+- Grading a blank answer is always "wrong" regardless of the model.
 - Derived slide data (extracted text + thumbnails) cached at `courses/<id>/derived/<source_id>/`
   (rebuildable from the source file; not in SPEC §3 layout).
 

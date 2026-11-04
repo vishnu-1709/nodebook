@@ -10,6 +10,8 @@ export interface StudyContext {
 }
 
 interface UiState {
+  toast: string;
+  showToast: (msg: string) => void;
   overlay: Overlay;
   open: (o: Overlay) => void;
   close: () => void;
@@ -17,7 +19,15 @@ interface UiState {
   setContext: (c: Partial<StudyContext>) => void;
 }
 
+let toastTimer: number | undefined;
+
 export const useUi = create<UiState>((set) => ({
+  toast: "",
+  showToast: (toast) => {
+    window.clearTimeout(toastTimer);
+    set({ toast });
+    toastTimer = window.setTimeout(() => set({ toast: "" }), 2500);
+  },
   overlay: "none",
   open: (overlay) => set({ overlay }),
   close: () => set({ overlay: "none" }),

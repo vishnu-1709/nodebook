@@ -1,7 +1,9 @@
 import { useEffect } from "react";
 import { Outlet } from "react-router-dom";
 import { useSettings } from "../api/hooks";
+import { anyModalOpen } from "../components/Modal";
 import { NewCourseDialog } from "../components/NewCourseDialog";
+import { QuickNote } from "../components/QuickNote";
 import { ShortcutHelp } from "../components/ShortcutHelp";
 import { Sidebar } from "../components/Sidebar";
 import { actionFor } from "./shortcuts";
@@ -13,6 +15,7 @@ export function Shell() {
   const open = useUi((s) => s.open);
   const close = useUi((s) => s.close);
   const settings = useSettings();
+  const toast = useUi((s) => s.toast);
 
   useEffect(() => {
     if (settings.data) applyTheme(settings.data.theme);
@@ -21,7 +24,7 @@ export function Shell() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const action = actionFor(e);
-      if (!action) return;
+      if (!action || anyModalOpen()) return;
       const current = useUi.getState().overlay;
       if (action === "escape") {
         if (current !== "none") {
@@ -60,6 +63,8 @@ export function Shell() {
       </main>
       {overlay === "help" && <ShortcutHelp onClose={close} />}
       {overlay === "new_course" && <NewCourseDialog onClose={close} />}
+      {overlay === "quick_note" && <QuickNote onClose={close} />}
+      {toast && <div className="app-toast" role="status">{toast}</div>}
     </div>
   );
 }
