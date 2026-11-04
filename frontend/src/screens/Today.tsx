@@ -4,6 +4,7 @@ import { errorMessage } from "../api/client";
 import { useCourse, useCourses } from "../api/hooks";
 import { useUploadLecture } from "../api/lectures";
 import { BUILTIN_TAG_COLOUR, relativeDue, useReminderMutations, useReminders, useToday, type Reminder } from "../api/today";
+import { minutesFor, useDueCounts } from "../api/review";
 import { useUi } from "../app/store";
 import { DropZone } from "../components/DropZone";
 import { PageHead } from "../components/PageHead";
@@ -44,6 +45,7 @@ export function Today() {
       {t && !empty && (
         <div className="stack today">
           <div className="next-cards">
+            <DueCard />
             <section className="card next-card" aria-label="Weak topics">
               <p className="next-kicker">Weak topics</p>
               {t.weak_nodes.length === 0 ? (
@@ -87,6 +89,19 @@ export function Today() {
         </div>
       )}
     </div>
+  );
+}
+
+function DueCard() {
+  const counts = useDueCounts();
+  const nav = useNavigate();
+  const n = counts.data?.total ?? 0;
+  return (
+    <section className="card next-card" aria-label="Due for review">
+      <p className="next-kicker">Due for review</p>
+      <p><span className="next-big">{n}</span> <span className="text-2">{n === 1 ? "item" : "cards"} · about {minutesFor(n)} min</span></p>
+      <div><button className="btn btn-dark" disabled={!n} onClick={() => nav("/review/session")}>Start review</button></div>
+    </section>
   );
 }
 

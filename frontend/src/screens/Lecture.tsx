@@ -135,6 +135,7 @@ export function LectureScreen() {
     { label: "Regenerate map", disabled: status !== "ready", onSelect: () => {
       if (window.confirm("Regenerate the map from the slides? Your edits to this map will be replaced.")) gen.mutate();
     } },
+    { label: "Export to Anki (.apkg)", onSelect: () => { window.location.href = `/api/courses/${courseId}/anki?lecture_id=${lectureId}`; } },
     { label: "Export outline (.md)", disabled: !doc, onSelect: () => {
       if (!doc) return;
       const blob = new Blob([exportOutline(doc)], { type: "text/markdown" });

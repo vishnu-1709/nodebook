@@ -129,3 +129,24 @@
 .gen-actions .btn { min-height: 52px; font-size: 15px; }
 .center { text-align: center; }
 @media (max-width: 900px) { .gen-body { grid-template-columns: 1fr; padding: var(--space-4); } }
+/* Review session — UI.md §3.6 */
+.review-head { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-4) var(--space-6); }
+.review-progress { height: 4px; margin: 0 var(--space-6); background: var(--border); border-radius: 2px; overflow: hidden; }
+.review-progress > div { height: 100%; background: var(--accent); transition: width var(--ease); }
+.review-main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-5); padding: var(--space-8) var(--space-4); }
+.review-card { width: min(680px, 100%); background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: var(--space-10); display: flex; flex-direction: column; gap: var(--space-5); }
+.review-q { font-size: 24px; font-weight: 600; line-height: 1.35; white-space: pre-wrap; }
+.review-divider { border: none; border-top: 1px solid var(--border); margin: 0; }
+.review-a { font-size: 18px; line-height: 1.5; white-space: pre-wrap; }
+.review-links { gap: var(--space-4); }
+.status-text-confused { color: var(--status-confused-text); }
+.status-text-revising { color: var(--status-revising-text); }
+.status-text-got_it { color: var(--status-got); }
+.review-flip { width: min(680px, 100%); min-height: 52px; }
+.rating-row { width: min(680px, 100%); display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-3); }
+.rating { min-height: 64px; flex-direction: column; gap: 2px; }
+.rating-label { font-size: 16px; font-weight: 600; }
+.rate-again { border-color: var(--status-confused); color: var(--status-confused-text); }
+.rate-good { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.rate-good:hover { background: var(--accent); filter: brightness(1.06); }
+.review-course { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }

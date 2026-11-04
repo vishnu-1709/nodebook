@@ -2,6 +2,7 @@ import { useState, type ReactNode } from "react";
 import { NavLink } from "react-router-dom";
 import { useCourses, useOllamaStatus, useSettings } from "../api/hooks";
 import { useInbox } from "../api/notes";
+import { useDueCounts } from "../api/review";
 import { initials } from "../app/sidebar";
 import { useUi } from "../app/store";
 
@@ -26,6 +27,8 @@ export function Sidebar({ collapsed, onToggle }: Props) {
   const settings = useSettings();
   const [menu, setMenu] = useState(false);
   const inboxCount = inbox.data?.length ?? 0;
+  const due = useDueCounts().data?.total ?? 0;
+  const dueBadge = due > 0 ? <span className={collapsed ? "rail-badge" : "badge"} aria-label={`${due} due`}>{due}</span> : null;
   const up = ollama.data?.status.reachable;
   const model = settings.data?.study_model ?? settings.data?.map_model;
   const close = () => setMenu(false);
@@ -53,7 +56,7 @@ export function Sidebar({ collapsed, onToggle }: Props) {
       </div>
       <button className="btn btn-ghost btn-sm menu-btn" aria-expanded={menu} onClick={() => setMenu(!menu)}>{menu ? "Close" : "Menu"}</button>
       {item("/", "Today", I.today, undefined, true)}
-      {item("/review", "Review", I.review)}
+      {item("/review", "Review", I.review, dueBadge)}
       {item("/inbox", "Notes inbox", I.inbox, inboxBadge)}
       {!collapsed && <div className="nav-section label-caps">Courses</div>}
       {collapsed && <div className="rail-sep" aria-hidden="true" />}

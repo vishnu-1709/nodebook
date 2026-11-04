@@ -1,6 +1,6 @@
 # Nodebook — Progress
 
-## Current milestone: M9 — Practice tab + FSRS + review session + Anki export
+## Current milestone: M10 — Blank-map recall + explain-it-back
 
 **v0.1 is feature-complete (M1–M8).** See "For the user to test locally" for the 1-week checkpoint.
 
@@ -87,12 +87,21 @@
 - Collapsible sidebar + map editing controls (user request) — see UI section.
 - Tests: 92 pytest, 23 vitest.
 
+- M9 complete: `backend/core/review.py` (FSRS via `fsrs` 6: card state in `PracticeItem.fsrs`, new =
+  due now, queue across lecture + course-level items with lecture filter, next-interval previews,
+  `review_log.jsonl` per course, due counts), `core/anki.py` (genanki deck per course/lecture,
+  stable ids/guids), `pipeline/cards.py` + prompt `node_cards.md` (cards from node slides / from a
+  note). UI: Review hub (due per course, lecture filter, Anki export), Review session per §3.6
+  (no sidebar, answer box first for questions, space flips, 1–4 rate), Today "Due for review" card,
+  sidebar Review badge, Practice tab add/edit/delete/"Make 3 cards from slides", Notes "Make flashcard",
+  lecture ⋯ "Export to Anki".
+- Tests: 98 pytest, 23 vitest.
+
 ### Next 3 steps
-1. M9: FSRS (py-fsrs) scheduling for cards + questions, review_log.jsonl, due queue API (course-wide,
-   lecture filter), ratings Again/Hard/Good/Easy with next-interval previews
-2. M9: Practice tab add/edit/delete; card sources (node slides, kept exchanges, notes, Generate)
-3. M9: Review session screen per `review-session.png` (no sidebar, 1–4 keys, space flips) + Anki
-   export (genanki) per course/lecture; Today due card
+1. M10: blank-map recall (labels hidden; type label per node position; fuzzy match then LLM
+   `recall_judge` for near-misses; score per node → results.jsonl)
+2. M10: explain-it-back (`explain_back_review`: what's missing/wrong with slide citations → results)
+3. M11: performance-based status (rules in one place) + course progress
 
 ## UI alignment (UI.md is the source of truth)
 - Done in branch `ui-align`: new tokens (UI.md §1), shared components (buttons incl. dark, pill chips,
@@ -119,10 +128,10 @@
 | Quick note | (UI.md §3.9) | ✅ popover, destination chip |
 | Collapsible sidebar | (UI.md §2) | ✅ 56px rail with bold "N" (expands on click), icons + course initials with tooltips, inbox badge visible, Ctrl/Cmd+B, remembered per screen type, lecture map opens collapsed (`rail-light.png`) |
 | Map editing controls | (UI.md §3.2) | ✅ double-click/F2 rename inline (never Focus), Tab/Enter add, Delete/Backspace with undo toast, drag, arrow collapse, F = Focus, Ctrl/Cmd+Z / Shift+Z synced to the server; right-click Rename · Add child · Add sibling · AI … · Delete; ? lists map keys |
+| Review session | `review-session.png` | ✅ no sidebar, header counts + `n / N`, 4px progress, centred card (path + status, 24/600 question, divider, answer), 4 rating buttons h64 with intervals, `1 2 3 4 · space` hint |
 | Today | `today.png` | ✅ header + actions, next-action cards (v0.1: Weak topics + Next exam), Upcoming reminders card (tag filter, overdue in confused colour, complete checkbox), lectures card with stacked bars + legend + dashed add |
 | Reminder popover | (UI.md §3.9) | ✅ parsed date + tag chips before confirm, optional link to current topic |
 | Break screen | (UI.md §3.9) | ✅ full overlay, remaining time, Skip break |
-| Review session | `review-session.png` | ⏳ M9 |
 
 ## Decisions
 - **Integration branch:** the cloud harness only allows pushing to `claude/gallant-cray-mdaoqn`, so that
@@ -160,6 +169,8 @@
 - Deleting a map node no longer asks for confirmation: it shows an Undo toast (UI.md §3.2) and
   Ctrl/Cmd+Z works. Threads/notes/cards of deleted nodes still move to the parent on the server.
 - No release tag pushed from the cloud session (outward-facing); user tags when ready.
+- Review: a session works on a snapshot of the queue taken at start; "Again" items reappear in the
+  next session (not re-inserted mid-session). Today now shows the Due card (v0.2) since FSRS exists.
 - Derived slide data (extracted text + thumbnails) cached at `courses/<id>/derived/<source_id>/`
   (rebuildable from the source file; not in SPEC §3 layout).
 
