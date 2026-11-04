@@ -24,3 +24,45 @@
 .page-head { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-5); }
 .title-input { font-size: 22px; font-weight: 600; max-width: 520px; }
 .empty-state { padding: var(--space-6); align-items: flex-start; }
+.section { margin-bottom: var(--space-6); }
+.list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+.list:empty { display: none; }
+.list-row { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-3); min-height: 52px; border-bottom: 1px solid var(--border); }
+.list-row:last-child { border-bottom: none; }
+.grow { flex: 1; min-width: 0; }
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stack-tight { display: flex; flex-direction: column; gap: 2px; }
+.lecture-link { color: var(--text); font-weight: 500; text-decoration: none; }
+.lecture-link:hover { text-decoration: underline; }
+.error-text { color: var(--danger); }
+.select-sm { min-height: 32px; width: auto; padding: 0 var(--space-2); font-size: 13px; }
+.dropzone {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
+  padding: var(--space-4); border: 1.5px dashed var(--border-strong); border-radius: var(--radius);
+  background: var(--surface-2); transition: border-color var(--transition), background var(--transition);
+}
+.dropzone.over { border-color: var(--accent); background: var(--accent-soft); }
+.job-progress { display: flex; align-items: center; gap: var(--space-2); }
+.progress-track { width: 160px; height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; }
+.progress-fill { height: 100%; background: var(--accent); transition: width var(--transition); }
+.lecture-screen { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.breadcrumb a { color: var(--muted); text-decoration: none; }
+.breadcrumb a:hover { text-decoration: underline; }
+.banners { display: flex; flex-direction: column; gap: var(--space-2); padding: 0 var(--space-5); }
+.banners:not(:empty) { padding-top: var(--space-3); }
+.lecture-body { flex: 1; display: flex; min-height: 0; }
+.map-area { flex: 1; position: relative; min-width: 0; }
+.side-panel {
+  width: var(--panel-w); flex: none; border-left: 1px solid var(--border); background: var(--surface);
+  padding: var(--space-4); overflow-y: auto; display: flex; flex-direction: column; gap: var(--space-3);
+}
+.chips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.chip {
+  min-height: 32px; padding: 0 var(--space-3); border-radius: 16px; border: 1px solid var(--border-strong);
+  background: var(--surface-2); cursor: pointer; font-size: 13px; color: var(--text);
+}
+.chip:hover { border-color: var(--accent); }
+.chip.active { background: var(--accent-soft); border-color: var(--accent); }
+.slide-view { display: flex; justify-content: center; background: var(--surface-2); border-radius: var(--radius); }
+.slide-view img { max-width: 100%; max-height: 60vh; border-radius: var(--radius-sm); }
+.slide-text { white-space: pre-wrap; font-family: var(--font-sans); margin: 0; padding: var(--space-4); width: 100%; }

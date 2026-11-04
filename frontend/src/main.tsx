@@ -7,6 +7,7 @@ import { applyTheme, initialTheme } from "./app/theme";
 import "./styles/tokens.css";
 import "./styles/base.css";
 import "./styles/shell.css";
+import "./styles/map.css";
 
 applyTheme(initialTheme());
 

@@ -32,6 +32,7 @@ export interface Lecture {
   map_job_id: string | null;
   map_error: string | null;
   map_fallback: boolean;
+  map_warnings: string[];
   uncovered_slides: SlideRef[];
   created_at: string;
 }
@@ -87,4 +88,60 @@ export interface JobInfo {
   message: string;
   error: string | null;
   result: Record<string, unknown> | null;
+}
+
+export type SourceKind = "slides" | "pyq" | "notes" | "textbook" | "other";
+export const SOURCE_KIND_LABEL: Record<SourceKind, string> = {
+  slides: "Slides",
+  pyq: "Past paper",
+  notes: "Notes",
+  textbook: "Textbook",
+  other: "Other",
+};
+
+export interface SourceMeta {
+  id: string;
+  filename: string;
+  ext: string;
+  kind: SourceKind;
+  size: number;
+  lecture_id: string | null;
+  slide_count: number | null;
+  has_thumbnails: boolean;
+  added_at: string;
+}
+
+export interface MapNode {
+  id: string;
+  label: string;
+  parent_id: string | null;
+  children: string[];
+  sources: SlideRef[];
+  status: Status;
+  status_mode: "manual" | "auto";
+  last_studied_at: string | null;
+  origin: "ai" | "user";
+  collapsed: boolean;
+}
+
+export interface MapDoc {
+  lecture_id: string;
+  root_id: string;
+  nodes: Record<string, MapNode>;
+}
+
+export interface Slide {
+  number: number;
+  text: string;
+  has_images: boolean;
+}
+
+export interface SlidesDoc {
+  source_id: string;
+  slides: Slide[];
+}
+
+export interface LectureCreated {
+  lecture: Lecture;
+  job: JobInfo;
 }

@@ -10,7 +10,7 @@ from fastapi import APIRouter, FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
-from backend.api import courses, jobs, ollama, settings
+from backend.api import courses, jobs, lectures, ollama, settings
 from backend.core.context import AppContext
 from backend.core.courses import NotFound
 from backend.core.paths import PathError
@@ -60,7 +60,7 @@ def create_app(
     def health() -> dict[str, str]:
         return {"status": "ok"}
 
-    for r in (courses.router, settings.router, jobs.router, ollama.router):
+    for r in (courses.router, lectures.router, settings.router, jobs.router, ollama.router):
         api.include_router(r)
     app.include_router(api)
 

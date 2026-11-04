@@ -1,0 +1,22 @@
+/* Mind-Elixir overrides: calm, token-driven. */
+.map-host { position: absolute; inset: 0; }
+.map-host .map-container { background: var(--ground); font-family: var(--font-sans); }
+.map-host .map-container .lines path, .map-host .map-container .subLines path { stroke: var(--border-strong); }
+.map-host me-tpc, .map-host .me-tpc { font-size: 14px; }
+.map-host .me-tpc .tags { display: inline-flex; gap: 4px; margin-left: 6px; vertical-align: middle; }
+.map-host .me-tpc .tags span { background: none; padding: 0; margin: 0; font-size: 11px; color: var(--muted); }
+.map-host .me-tpc .tags span.me-status { display: inline-flex; align-items: center; gap: 4px; }
+.map-host .me-tpc .tags span.me-status::before {
+  content: ""; width: 8px; height: 8px; border-radius: 50%; display: inline-block;
+}
+.map-host .me-tpc .tags span.status-got_it::before { background: var(--status-got-it); }
+.map-host .me-tpc .tags span.status-revising::before { background: var(--status-revising); }
+.map-host .me-tpc .tags span.status-confused::before { background: var(--status-confused); }
+.map-host .me-tpc .tags span.status-not_started::before { border: 1.5px solid var(--status-not-started); width: 6px; height: 6px; }
+.map-host .me-tpc .tags span.me-badge {
+  font-family: var(--font-mono); border: 1px solid var(--border-strong); border-radius: 8px; padding: 0 5px; color: var(--text);
+}
+.map-host .mind-elixir-toolbar { background: var(--surface); border: 1px solid var(--border); box-shadow: none; color: var(--text); }
+.map-host .map-container .me-root .me-tpc { font-size: 18px; padding: 10px 18px; }
+.map-host .map-container .me-parent .me-epd.minus { transition: opacity var(--transition); }
+.map-host .map-container .selection-area { background: var(--accent-soft); border-color: var(--accent); }

@@ -81,6 +81,7 @@ class Lecture(Doc):
     map_job_id: str | None = None
     map_error: str | None = None
     map_fallback: bool = False
+    map_warnings: list[str] = Field(default_factory=list)
     uncovered_slides: list[SlideRef] = Field(default_factory=list)
     created_at: str = Field(default_factory=now_iso)
 
