@@ -28,7 +28,7 @@ from backend.pipeline.parse_pdf import ParseError, parse_pdf
 from backend.pipeline.parse_pptx import parse_pptx
 
 router = APIRouter(tags=["system"])
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 
 
 class SystemOut(BaseModel):

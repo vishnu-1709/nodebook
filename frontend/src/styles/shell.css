@@ -196,3 +196,8 @@
 .disabled-link { opacity: 0.5; pointer-events: none; }
 .progress-card { margin-bottom: var(--space-4); }
 .progress-big { font-size: 28px; }
+.brain { width: min(600px, calc(100vw - 32px)); background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-card-lg); padding: var(--space-8); }
+.brain .break-title { text-align: left; padding: 0; }
+.brain-q { padding-top: var(--space-3); border-top: 1px solid var(--border); }
+.week-line { margin: calc(-1 * var(--space-3)) 0 var(--space-5); }
+.fading-title { font-size: 18px; font-weight: 600; }

@@ -4,6 +4,19 @@ import { create } from "zustand";
 
 export type Phase = "idle" | "work" | "break";
 
+export interface Touched {
+  course_id: string;
+  lecture_id: string;
+  node_id: string;
+}
+
+export interface BrainCheck {
+  startedAt: number;
+  endedAt: number;
+  workMin: number;
+  touched: Touched[];
+}
+
 export interface PomoState {
   phase: Phase;
   running: boolean;
@@ -13,11 +26,14 @@ export interface PomoState {
   breakMin: number;
   startedAt: number | null; // start of the current work block
   finishSince: number | null; // work ended while typing → "finish your thought"
+  touched: Touched[]; // nodes opened during this focus block (for the brain check)
+  check: BrainCheck | null; // end-of-session quick brain check, shown before the break starts
 }
 
 export const FINISH_GRACE_MS = 60_000;
 export const IDLE: PomoState = {
   phase: "idle", running: false, endsAt: null, remainingMs: 25 * 60_000, workMin: 25, breakMin: 5, startedAt: null, finishSince: null,
+  touched: [], check: null,
 };
 
 export function remaining(s: PomoState, now: number): number {
@@ -27,7 +43,7 @@ export function remaining(s: PomoState, now: number): number {
 }
 
 export function startWork(s: PomoState, now: number, workMin = s.workMin, breakMin = s.breakMin): PomoState {
-  return { ...s, phase: "work", running: true, workMin, breakMin, endsAt: now + workMin * 60_000, remainingMs: workMin * 60_000, startedAt: now, finishSince: null };
+  return { ...s, phase: "work", running: true, workMin, breakMin, endsAt: now + workMin * 60_000, remainingMs: workMin * 60_000, startedAt: now, finishSince: null, touched: [], check: null };
 }
 
 export function pause(s: PomoState, now: number): PomoState {
@@ -62,10 +78,20 @@ export function tick(s: PomoState, now: number, typing: boolean): { state: PomoS
   if (s.phase === "work") {
     if (s.finishSince === null && typing) return { state: { ...s, finishSince: now }, event: null };
     if (s.finishSince !== null && typing && now - s.finishSince < FINISH_GRACE_MS) return { state: s, event: null };
-    return { state: startBreak(s, now), event: "work_done" };
+    const brk = startBreak(s, now);
+    // v0.2: if topics were studied, hold the break for a quick brain check first
+    if (s.touched.length > 0 && s.startedAt !== null) {
+      return { state: { ...brk, running: false, endsAt: null, check: { startedAt: s.startedAt, endedAt: now, workMin: s.workMin, touched: s.touched } }, event: "work_done" };
+    }
+    return { state: brk, event: "work_done" };
   }
   if (s.phase === "break") return { state: stop(s), event: "break_done" };
   return { state: s, event: null };
+}
+
+export function touch(s: PomoState, t: Touched): PomoState {
+  if (s.phase !== "work" || !s.running || s.touched.some((x) => x.node_id === t.node_id)) return s;
+  return { ...s, touched: [...s.touched, t] };
 }
 
 export function fmt(ms: number): string {

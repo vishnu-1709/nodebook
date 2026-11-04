@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { errorMessage } from "../api/client";
 import { useCourse, useCourses } from "../api/hooks";
 import { useUploadLecture } from "../api/lectures";
-import { BUILTIN_TAG_COLOUR, relativeDue, useReminderMutations, useReminders, useToday, type Reminder } from "../api/today";
+import { BUILTIN_TAG_COLOUR, relativeDue, useReminderMutations, useReminders, useToday, weekLine, type Reminder } from "../api/today";
 import { minutesFor, useDueCounts } from "../api/review";
 import { useUi } from "../app/store";
 import { DropZone } from "../components/DropZone";
@@ -42,29 +42,21 @@ export function Today() {
           <div><button className="btn btn-primary" onClick={() => open("new_course")}>Add your first course</button></div>
         </div>
       )}
+      {t && !empty && <p className="small text-2 week-line">{weekLine(t.week)}</p>}
       {t && !empty && (
         <div className="stack today">
           <div className="next-cards">
             <DueCard />
-            <section className="card next-card" aria-label="Weak topics">
-              <p className="next-kicker">Weak topics</p>
-              {t.weak_nodes.length === 0 ? (
+            <section className="card next-card" aria-label="Fading soon">
+              <p className="next-kicker">Fading soon</p>
+              {t.fading[0] ? (
                 <>
-                  <p className="next-big">0</p>
-                  <p className="small text-2">Nothing marked confused. Pick a topic and press Test me.</p>
+                  <p className="fading-title">{t.fading[0].label}</p>
+                  <p className="small text-2">{t.fading[0].lecture_title} · {t.fading[0].count} card{t.fading[0].count === 1 ? "" : "s"} · {minutesFor(t.fading[0].count)} min</p>
+                  <div><Link to={`/course/${t.fading[0].course_id}/lecture/${t.fading[0].lecture_id}${t.fading[0].node_id ? `?node=${t.fading[0].node_id}` : ""}`}>Open topic →</Link></div>
                 </>
               ) : (
-                <>
-                  <p><span className="next-big">{t.weak_nodes.length}</span> <span className="text-2">topic{t.weak_nodes.length > 1 ? "s" : ""} still confused</span></p>
-                  <ul className="weak-list">
-                    {t.weak_nodes.slice(0, 3).map((w) => (
-                      <li key={w.node_id}>
-                        <Link to={`/course/${w.course_id}/lecture/${w.lecture_id}?node=${w.node_id}`}>{w.label}</Link>
-                        <span className="small muted"> · {w.lecture_title}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </>
+                <p className="small text-2">Nothing is about to slip in the next 2 days.</p>
               )}
             </section>
             <section className="card next-card" aria-label="Next exam">
@@ -72,11 +64,12 @@ export function Today() {
               {t.exam ? (
                 <>
                   <p><span className="next-big">{t.exam.days}</span> <span className="text-2">day{t.exam.days === 1 ? "" : "s"} · {t.exam.reminder.text}{courseName(courses.data, t.exam.reminder.course_id)}</span></p>
-                  {examWeak(t) > 0 && <p className="confused-text small">{examWeak(t)} topic{examWeak(t) > 1 ? "s" : ""} still confused</p>}
+                  {examWeak(t) > 0 && <ConfusedLink t={t} n={examWeak(t)} />}
                 </>
               ) : (
                 <>
                   <p className="small text-2">No exam yet. Add a reminder tagged #exam to start a countdown.</p>
+                  {t.weak_nodes.length > 0 && <ConfusedLink t={t} n={t.weak_nodes.length} />}
                   <div><button className="btn btn-sm" onClick={() => open("reminder")}>+ Reminder <span className="kbd">R</span></button></div>
                 </>
               )}
@@ -102,6 +95,20 @@ function DueCard() {
       <p><span className="next-big">{n}</span> <span className="text-2">{n === 1 ? "item" : "cards"} · about {minutesFor(n)} min</span></p>
       <div><button className="btn btn-dark" disabled={!n} onClick={() => nav("/review/session")}>Start review</button></div>
     </section>
+  );
+}
+
+function ConfusedLink({ t, n }: { t: NonNullable<ReturnType<typeof useToday>["data"]>; n: number }) {
+  const cid = t.exam?.reminder.course_id;
+  const w = t.weak_nodes.find((x) => !cid || x.course_id === cid) ?? t.weak_nodes[0];
+  if (!w) return null;
+  return (
+    <p className="small">
+      <Link className="confused-text" to={`/course/${w.course_id}/lecture/${w.lecture_id}?node=${w.node_id}`}>
+        {n} topic{n > 1 ? "s" : ""} still confused
+      </Link>
+      <span className="muted"> · start with {w.label}</span>
+    </p>
   );
 }
 
@@ -141,6 +148,7 @@ function RemindersCard() {
             {tagsInUse.map((x) => <button key={x} className="chip" aria-pressed={tag === x} onClick={() => setTag(tag === x ? null : x)}>#{x}</button>)}
           </div>
         )}
+        <a className="btn btn-sm btn-ghost" href="/api/reminders.ics" download>Add all to calendar</a>
         <button className="btn btn-sm" onClick={() => open("reminder")}>+ Reminder <span className="kbd">R</span></button>
       </div>
       {rows.length === 0 ? (
@@ -155,6 +163,7 @@ function RemindersCard() {
                 {r.link ? <Link to={linkHref(r)} className="lecture-link">{r.text}</Link> : r.text}
               </span>
               <span className={when === "overdue" ? "small confused-text" : "small text-2"}>{relativeDue(r.due_at)}</span>
+              <a className="btn btn-ghost btn-sm" href={`/api/reminders/${r.id}.ics`} download title="Add to calendar (.ics)" aria-label={`Add ${r.text} to calendar`}>Add to calendar</a>
               <button className="btn btn-ghost btn-sm" aria-label={`Delete ${r.text}`} onClick={() => m.remove.mutate(r.id)}>✕</button>
             </li>
           ))}

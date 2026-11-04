@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FINISH_GRACE_MS, IDLE, fmt, pause, remaining, resume, startWork, tick, toggle } from "./pomodoro";
+import { FINISH_GRACE_MS, IDLE, fmt, pause, remaining, resume, startWork, tick, toggle, touch } from "./pomodoro";
 
 const T0 = 1_000_000;
 const MIN = 60_000;
@@ -44,6 +44,19 @@ describe("pomodoro", () => {
     const s = startWork(IDLE, T0);
     const restored = JSON.parse(JSON.stringify(s));
     expect(remaining(restored, T0 + MIN)).toBe(24 * MIN);
+  });
+
+  it("holds the break for a brain check when topics were studied", () => {
+    let s = startWork(IDLE, T0, 25, 5);
+    s = touch(s, { course_id: "c", lecture_id: "l", node_id: "a" });
+    s = touch(s, { course_id: "c", lecture_id: "l", node_id: "a" });
+    expect(s.touched).toHaveLength(1);
+    const r = tick(s, T0 + 25 * MIN, false);
+    expect(r.event).toBe("work_done");
+    expect(r.state.phase).toBe("break");
+    expect(r.state.running).toBe(false);
+    expect(r.state.check?.touched).toHaveLength(1);
+    expect(remaining(r.state, T0 + 40 * MIN)).toBe(5 * MIN); // break waits for the check
   });
 
   it("formats mm:ss", () => {

@@ -39,6 +39,18 @@ export interface TodayData {
   today: Reminder[];
   upcoming: Reminder[];
   exam: { reminder: Reminder; days: number } | null;
+  due: number;
+  fading: { course_id: string; lecture_id: string; lecture_title: string; node_id: string | null; label: string; count: number }[];
+  week: { focus_min: number; sessions: number; reviews: number; tests: number; topics_studied: number };
+}
+
+export function weekLine(w: TodayData["week"]): string {
+  const parts: string[] = [];
+  if (w.focus_min) parts.push(w.focus_min >= 60 ? `${Math.floor(w.focus_min / 60)} h ${w.focus_min % 60} min focused` : `${w.focus_min} min focused`);
+  if (w.reviews) parts.push(`${w.reviews} review${w.reviews === 1 ? "" : "s"}`);
+  if (w.tests) parts.push(`${w.tests} test${w.tests === 1 ? "" : "s"}`);
+  if (w.topics_studied) parts.push(`${w.topics_studied} topic${w.topics_studied === 1 ? "" : "s"} studied`);
+  return parts.length ? `This week: ${parts.join(" · ")}` : "This week: nothing yet — one focus block is a good start.";
 }
 
 export function useToday() {

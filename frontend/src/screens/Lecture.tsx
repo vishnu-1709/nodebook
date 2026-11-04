@@ -8,6 +8,7 @@ import { useMapMutations, type NodeAction, type Proposal } from "../api/maps";
 import { useKeptCounts } from "../api/threads";
 import type { MapDoc, SlideRef } from "../api/types";
 import { onShortcut, useUi } from "../app/store";
+import { touch, usePomodoro } from "../app/pomodoro";
 import { ContextMenu, type MenuItem } from "../components/ContextMenu";
 import { ExplainBack } from "../components/ExplainBack";
 import { JobProgress } from "../components/JobProgress";
@@ -81,6 +82,10 @@ export function LectureScreen() {
 
   useEffect(() => {
     setContext({ courseId, lectureId, nodeId: selected });
+    if (selected) {
+      const p = usePomodoro.getState();
+      p.set(touch(p.s, { course_id: courseId, lecture_id: lectureId, node_id: selected }));
+    }
   }, [courseId, lectureId, selected, setContext]);
   useEffect(() => () => setContext({ courseId: null, lectureId: null, nodeId: null }), [setContext]);
   useEffect(() => {

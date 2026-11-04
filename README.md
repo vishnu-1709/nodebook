@@ -7,7 +7,7 @@ next useful thing to study.
 Local-first, open source, single-user. Runs on your own machine with a local LLM
 through [Ollama](https://ollama.com). No accounts, no server, no cloud.
 
-## What it does (v0.1)
+## What it does (v0.2)
 
 - Drop a PDF or PPTX → a mind map of the lecture, every node linked to its slides; a banner lists
   slides the map doesn't cover.
@@ -17,8 +17,14 @@ through [Ollama](https://ollama.com). No accounts, no server, no cloud.
   are temporary unless you keep them. Test me asks three recall questions from that node's slides.
 - Generate practice questions, flashcards, summaries and explanations from your slides and past
   papers, one at a time, and save them onto the right topic.
-- Today: weak topics, exam countdown, reminders ("lab exam 14 nov #exam"), lecture progress.
-  Pomodoro timer on every screen.
+- Spaced review (FSRS) for flashcards and saved questions: Again / Hard / Good / Easy with keys 1–4,
+  a calm one-item-at-a-time session, and Anki export.
+- Recall tests: rebuild a map from memory (labels hidden), or explain a topic in your own words and
+  see what you missed — with slide references.
+- Topic status follows your results automatically (Got it / Revising / Confused) unless you set it.
+- Today: due reviews, topics fading soon, exam countdown, reminders ("lab exam 14 nov #exam", add to
+  your calendar as .ics), lecture progress and a weekly summary line. Pomodoro on every screen, with a
+  quick 3-question brain check at the end of a focus block.
 
 ## Install
 

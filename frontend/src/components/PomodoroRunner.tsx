@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { api } from "../api/client";
-import { fmt, remaining, stop, tick, usePomodoro } from "../app/pomodoro";
+import { fmt, remaining, resume, stop, tick, usePomodoro } from "../app/pomodoro";
+import { BrainCheckView } from "./BrainCheck";
 import { isTypingTarget } from "../app/shortcuts";
 import { useNow } from "../app/useNow";
 import { useModalLayer } from "./Modal";
@@ -71,6 +72,13 @@ function BreakScreen() {
   const { s, set } = usePomodoro();
   const now = useNow(true);
   useModalLayer(() => set(stop(s)));
+  if (s.check) {
+    return (
+      <div className="break-screen" role="dialog" aria-modal="true" aria-label="Quick brain check">
+        <BrainCheckView check={s.check} onDone={() => set({ ...resume(s, Date.now()), check: null })} onSkipBreak={() => set(stop(s))} />
+      </div>
+    );
+  }
   return (
     <div className="break-screen" role="dialog" aria-modal="true" aria-label="Break">
       <p className="break-title">Break — look away from the screen for a bit</p>

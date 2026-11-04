@@ -1,6 +1,6 @@
 # Nodebook — Progress
 
-## Current milestone: M12 — Today v0.2 + .ics + pomodoro recall (v0.2)
+## Status: M1–M12 complete — v0.2 feature-complete
 
 **v0.1 is feature-complete (M1–M8).** See "For the user to test locally" for the 1-week checkpoint.
 
@@ -113,10 +113,19 @@
   "Use automatic status" switches back. Course page progress overview card.
 - Tests: 105 pytest, 23 vitest.
 
-### Next 3 steps
-1. M12: Today v0.2 — "Fading soon" (FSRS retrievability < 0.85 within 2 days), weekly summary line
-2. M12: reminders "Add to calendar" (.ics)
-3. M12: pomodoro end-of-session "Quick brain check" (3 questions from nodes touched) + summary line
+- M12 complete: Today v0.2 (`core/today.py`: due count = queue, "Fading soon" = FSRS retrievability
+  < 0.85 within 2 days grouped by topic, weekly line: focus minutes, reviews, tests, topics studied);
+  Today shows Due · Fading soon · Next exam cards like `today.png` (weak topics folded into the exam
+  card's "N topics still confused" link); reminders `.ics` (`core/ics.py`, RFC 5545 folding/escaping,
+  one or all); pomodoro "Quick brain check" (`api/brain.py`): nodes opened during a focus block are
+  tracked; when it ends the break is held for 3 questions from those nodes (graded, saved to each
+  node's history) with the "25 min · 2 nodes · 8 cards" line, then Start break.
+- Tests: 106 pytest, 25 vitest.
+
+### Next 3 steps (after your feedback)
+1. Your real-deck / real-model findings from the M2 + M8 checkpoints → prompt and parser fixes
+2. Windows/macOS build check of `scripts/build_exe.py` (only Linux verified here)
+3. v0.3 items from SPEC §1 (PYQ heat map, exam plan, cross-lecture links, global search) when you say
 
 ## UI alignment (UI.md is the source of truth)
 - Done in branch `ui-align`: new tokens (UI.md §1), shared components (buttons incl. dark, pill chips,
@@ -143,6 +152,8 @@
 | Quick note | (UI.md §3.9) | ✅ popover, destination chip |
 | Collapsible sidebar | (UI.md §2) | ✅ 56px rail with bold "N" (expands on click), icons + course initials with tooltips, inbox badge visible, Ctrl/Cmd+B, remembered per screen type, lecture map opens collapsed (`rail-light.png`) |
 | Map editing controls | (UI.md §3.2) | ✅ double-click/F2 rename inline (never Focus), Tab/Enter add, Delete/Backspace with undo toast, drag, arrow collapse, F = Focus, Ctrl/Cmd+Z / Shift+Z synced to the server; right-click Rename · Add child · Add sibling · AI … · Delete; ? lists map keys |
+| Today v0.2 | `today.png` | ✅ Due for review · Fading soon · Next exam cards, weekly line, Upcoming with calendar links, lectures card |
+| Brain check | (SPEC §5.11) | ✅ before the break screen, summary line + 3 questions |
 | Review session | `review-session.png` | ✅ no sidebar, header counts + `n / N`, 4px progress, centred card (path + status, 24/600 question, divider, answer), 4 rating buttons h64 with intervals, `1 2 3 4 · space` hint |
 | Blank-map recall | (SPEC §5.13; map style per §3.2) | ✅ full screen, sidebar-free, boxed positions + orthogonal connectors, results in status colours |
 | Explain it back | (SPEC §5.13) | ✅ modal; missing/wrong with slide chips |
@@ -199,8 +210,10 @@
   `dist/Nodebook/Nodebook`. Please check on Windows/macOS too (I could only build Linux here): double-
   click → onboarding in the browser within 10 s; model download progress with a real Ollama; "Test on
   my slides" with your decks; PPTX thumbnails with LibreOffice installed.
-- To publish v0.1: merge `claude/gallant-cray-mdaoqn` into `main`, then push tag `v0.1.0` — the
-  release workflow builds and attaches the three zips. (I didn't push a tag from here.)
+- **v0.2 (M12) is done**: please try a week of review sessions with real decks; check FSRS intervals
+  feel right and that automatic statuses match your sense of each topic.
+- To publish: merge `claude/gallant-cray-mdaoqn` into `main`, then push tag `v0.1.0` (and later
+  `v0.2.0`) — the release workflow builds and attaches the three zips. (I didn't push tags from here.)
 - **M2 checkpoint (non-blocking): please try 3 of your real lecture decks** with a real Ollama model:
   `scripts/dev.sh`, Settings → pick a map model (e.g. `qwen2.5:7b` or larger), create a course, drop a
   deck. Check: topics make sense, slide chips point at the right slides, coverage banner lists slides
