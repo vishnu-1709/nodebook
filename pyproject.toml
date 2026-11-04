@@ -1,6 +1,6 @@
 [project]
 name = "nodebook"
-version = "0.0.1"
+version = "0.1.0"
 description = "Turn lecture slides into an editable mind map you study from. Local-first."
 requires-python = ">=3.11"
 dependencies = [

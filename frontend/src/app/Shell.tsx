@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Outlet, useLocation } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { isCollapsed, screenType, useSidebar } from "./sidebar";
 import { useSettings } from "../api/hooks";
 import { anyModalOpen } from "../components/Modal";
@@ -74,6 +74,8 @@ export function Shell() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open, close]);
+
+  if (settings.data && !settings.data.onboarded) return <Navigate to="/welcome" replace />;
 
   return (
     <div className={collapsed ? "shell rail-mode" : "shell"}>

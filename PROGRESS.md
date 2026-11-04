@@ -1,6 +1,8 @@
 # Nodebook — Progress
 
-## Current milestone: M8 — Onboarding + recommended models + executable (v0.1)
+## Current milestone: M9 — Practice tab + FSRS + review session + Anki export
+
+**v0.1 is feature-complete (M1–M8).** See "For the user to test locally" for the 1-week checkpoint.
 
 ### Plan (M1)
 1. Backend core: `core/paths.py` (data-folder sandbox), `core/storage.py` (atomic JSON, per-file locks,
@@ -73,11 +75,24 @@
   nudges suppressed during a focus block.
 - Tests: 83 pytest, 19 vitest.
 
+- M8 complete: onboarding wizard `/welcome` (data folder → Ollama check with Install/Retry/Skip →
+  models: RAM tier from `config/recommended_models.json`, Recommended + vision badges, one-click
+  download with progress, any installed model, "Test on my slides"), same models panel in Settings;
+  Settings → Data: open folder, export/import course zip (`core/transfer.py`, id rewrite + zip-slip
+  guard); `backend/launcher.py` (free port, 127.0.0.1 only, single-instance lock file, opens browser);
+  `scripts/build_exe.py` (PyInstaller one-folder: static, prompts, config bundled; resources resolved
+  via `core/resources.py`); `.github/workflows/ci.yml` + `release.yml` (tag `v*` → Win/Mac/Linux zips).
+  AC 8 verified here on Linux: built `dist/Nodebook/Nodebook` answers in 1.2 s; onboarding page shown
+  317 ms after load on a fresh config.
+- Collapsible sidebar + map editing controls (user request) — see UI section.
+- Tests: 92 pytest, 23 vitest.
+
 ### Next 3 steps
-1. M8: onboarding wizard (data folder → Ollama check → models), `config/recommended_models.json`,
-   RAM via psutil, model pull job with progress, "Test on my slides"
-2. M8: launcher (free port, single-instance lock, open browser), `scripts/build_exe.py` (PyInstaller)
-3. M8: GitHub Actions release workflow; README install docs; tag v0.1
+1. M9: FSRS (py-fsrs) scheduling for cards + questions, review_log.jsonl, due queue API (course-wide,
+   lecture filter), ratings Again/Hard/Good/Easy with next-interval previews
+2. M9: Practice tab add/edit/delete; card sources (node slides, kept exchanges, notes, Generate)
+3. M9: Review session screen per `review-session.png` (no sidebar, 1–4 keys, space flips) + Anki
+   export (genanki) per course/lecture; Today due card
 
 ## UI alignment (UI.md is the source of truth)
 - Done in branch `ui-align`: new tokens (UI.md §1), shared components (buttons incl. dark, pill chips,
@@ -140,10 +155,22 @@
 - Reminders with no date in the text need a date picked in the popover (no silent default).
 - Pomodoro state lives in localStorage (per browser) — survives refresh; sessions are logged to
   `sessions.jsonl` when a focus block completes.
+- From M8 on, milestone commits are pushed to the integration branch as-is (fast-forward) instead
+  of one squash commit per milestone.
+- Deleting a map node no longer asks for confirmation: it shows an Undo toast (UI.md §3.2) and
+  Ctrl/Cmd+Z works. Threads/notes/cards of deleted nodes still move to the parent on the server.
+- No release tag pushed from the cloud session (outward-facing); user tags when ready.
 - Derived slide data (extracted text + thumbnails) cached at `courses/<id>/derived/<source_id>/`
   (rebuildable from the source file; not in SPEC §3 layout).
 
 ## For the user to test locally
+- **v0.1 checkpoint (M8, non-blocking): use it for about a week before judging v0.2.** Build or run:
+  `scripts/dev.sh`, or `pip install pyinstaller && python scripts/build_exe.py` then run
+  `dist/Nodebook/Nodebook`. Please check on Windows/macOS too (I could only build Linux here): double-
+  click → onboarding in the browser within 10 s; model download progress with a real Ollama; "Test on
+  my slides" with your decks; PPTX thumbnails with LibreOffice installed.
+- To publish v0.1: merge `claude/gallant-cray-mdaoqn` into `main`, then push tag `v0.1.0` — the
+  release workflow builds and attaches the three zips. (I didn't push a tag from here.)
 - **M2 checkpoint (non-blocking): please try 3 of your real lecture decks** with a real Ollama model:
   `scripts/dev.sh`, Settings → pick a map model (e.g. `qwen2.5:7b` or larger), create a course, drop a
   deck. Check: topics make sense, slide chips point at the right slides, coverage banner lists slides

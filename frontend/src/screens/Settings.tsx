@@ -1,5 +1,8 @@
-import { useEffect, useState } from "react";
-import { errorMessage } from "../api/client";
+import { useEffect, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { api, errorMessage } from "../api/client";
+import { useCourses } from "../api/hooks";
+import { ModelsPanel } from "../components/ModelsPanel";
 import { useOllamaStatus, usePatchSettings, useSettings } from "../api/hooks";
 import type { Theme } from "../api/types";
 import { PageHead } from "../components/PageHead";
@@ -19,6 +22,7 @@ export function SettingsScreen() {
   const patch = usePatchSettings();
   const [section, setSection] = useState<Section>("general");
   const [dataDir, setDataDir] = useState("");
+  const [dataMsg, setDataMsg] = useState("");
 
   useEffect(() => {
     if (settings.data) setDataDir(settings.data.data_dir);
@@ -70,8 +74,12 @@ export function SettingsScreen() {
               {ollama.data?.json_warnings.map((m) => (
                 <p key={m} className="banner banner-error">“{m}” keeps returning broken JSON. Try a larger model for this slot.</p>
               ))}
-              <ModelSlot label="Map model (heavy, used rarely)" value={s.map_model} models={models} onChange={(v) => patch.mutate({ map_model: v })} />
-              <ModelSlot label="Study model (light, used often)" value={s.study_model} models={models} onChange={(v) => patch.mutate({ study_model: v })} />
+              {reachable ? <ModelsPanel /> : (
+                <>
+                  <ModelSlot label="Map model (heavy, used rarely)" value={s.map_model} models={models} onChange={(v) => patch.mutate({ map_model: v })} />
+                  <ModelSlot label="Study model (light, used often)" value={s.study_model} models={models} onChange={(v) => patch.mutate({ study_model: v })} />
+                </>
+              )}
             </>
           )}
           {section === "study" && (
@@ -110,6 +118,11 @@ export function SettingsScreen() {
                 <input className="input" aria-label="Data folder path" value={dataDir} onChange={(e) => setDataDir(e.target.value)} />
                 <button className="btn" type="submit" disabled={dataDir === s.data_dir}>Use folder</button>
               </form>
+              <div className="row wrap">
+                <button className="btn btn-sm" onClick={() => void api("/system/open-data-folder", { method: "POST" }).catch((e) => setDataMsg(errorMessage(e)))}>Open data folder</button>
+              </div>
+              <DataTransfer onMessage={setDataMsg} />
+              {dataMsg && <p className="small text-2">{dataMsg}</p>}
               <label className="row">
                 <input type="checkbox" checked={s.usage_log} onChange={(e) => patch.mutate({ usage_log: e.target.checked })} />
                 Local usage log (feature counts in your data folder; never shown or sent anywhere)
@@ -141,5 +154,36 @@ function ModelSlot(props: {
         ))}
       </select>
     </label>
+  );
+}
+
+function DataTransfer({ onMessage }: { onMessage: (m: string) => void }) {
+  const courses = useCourses();
+  const qc = useQueryClient();
+  const input = useRef<HTMLInputElement>(null);
+  const [cid, setCid] = useState("");
+  return (
+    <div className="stack">
+      <h3>Export / import a course</h3>
+      <div className="row wrap">
+        <select className="select select-sm" aria-label="Course to export" value={cid} onChange={(e) => setCid(e.target.value)}>
+          <option value="">Choose a course…</option>
+          {courses.data?.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </select>
+        <a className={cid ? "btn btn-sm" : "btn btn-sm disabled-link"} aria-disabled={!cid} href={cid ? `/api/courses/${cid}/export` : undefined} download>Export (.zip)</a>
+        <button className="btn btn-sm" onClick={() => input.current?.click()}>Import course…</button>
+        <input ref={input} type="file" accept=".zip" className="visually-hidden" tabIndex={-1} aria-hidden="true"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            e.target.value = "";
+            if (!f) return;
+            const fd = new FormData();
+            fd.append("file", f);
+            api<{ course_id: string }>("/courses/import", { method: "POST", body: fd })
+              .then(() => { onMessage("Course imported."); void qc.invalidateQueries({ queryKey: ["courses"] }); })
+              .catch((err) => onMessage(errorMessage(err)));
+          }} />
+      </div>
+    </div>
   );
 }

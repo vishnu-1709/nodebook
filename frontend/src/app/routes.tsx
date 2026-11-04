@@ -2,12 +2,14 @@ import { createBrowserRouter } from "react-router-dom";
 import { CourseScreen } from "../screens/Course";
 import { LectureScreen } from "../screens/Lecture";
 import { InboxScreen } from "../screens/Inbox";
+import { Onboarding } from "../screens/Onboarding";
 import { Placeholder } from "../screens/Placeholder";
 import { SettingsScreen } from "../screens/Settings";
 import { Today } from "../screens/Today";
 import { Shell } from "./Shell";
 
 export const router = createBrowserRouter([
+  { path: "/welcome", element: <Onboarding /> },
   {
     path: "/",
     element: <Shell />,
