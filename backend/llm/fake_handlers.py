@@ -79,5 +79,58 @@ def map_merge(messages: list[ChatMessage], schema: Any = None) -> dict[str, Any]
     return {"topics": topics}
 
 
+def _slides_in(messages: list[ChatMessage]) -> list[tuple[int, str]]:
+    text = next((m.content for m in reversed(messages) if m.role == "user"), "")
+    return [(int(n), b.strip()) for n, b in _SLIDE_RE.findall(text)]
+
+
+def _lines(slides: list[tuple[int, str]]) -> list[tuple[int, str]]:
+    out = []
+    for n, body in slides:
+        for ln in body.splitlines()[1:]:
+            ln = ln.strip("•-* ").strip()
+            if ln:
+                out.append((n, " ".join(ln.split()[:5])))
+    return out
+
+
+def node_expand(messages: list[ChatMessage], schema: Any = None) -> dict[str, Any]:
+    lines = _lines(_slides_in(messages))[:4]
+    return {"subtopics": [{"label": l, "slides": [n]} for n, l in lines]}
+
+
+def node_split(messages: list[ChatMessage], schema: Any = None) -> dict[str, Any]:
+    slides = _slides_in(messages)
+    if len(slides) >= 2:
+        half = len(slides) // 2
+        a, b = slides[:half], slides[half:]
+        return {"parts": [{"label": _title(a[0][1]) or "Part one", "slides": [n for n, _ in a]},
+                          {"label": _title(b[0][1]) or "Part two", "slides": [n for n, _ in b]}]}
+    lines = _lines(slides)[:2]
+    return {"parts": [{"label": l, "slides": [n]} for n, l in lines]}
+
+
+def node_merge(messages: list[ChatMessage], schema: Any = None) -> dict[str, Any]:
+    text = next((m.content for m in reversed(messages) if m.role == "user"), "")
+    m = re.search(r'"(.+?)" and "(.+?)"', text)
+    a, b = (m.group(1), m.group(2)) if m else ("Topic", "topic")
+    return {"label": f"{a.split()[0]} and {b.split()[0]}"}
+
+
+def node_simplify(messages: list[ChatMessage], schema: Any = None) -> dict[str, Any]:
+    text = next((m.content for m in reversed(messages) if m.role == "user"), "")
+    m = re.search(r'label "(.+?)"', text)
+    label = m.group(1) if m else "Topic"
+    return {"label": " ".join(label.split()[:3])}
+
+
 def default_handlers() -> dict[str, Any]:
-    return {"*": _echo, "map_chunk": map_chunk, "map_merge": map_merge}
+    return {
+        "*": _echo,
+        "map_chunk": map_chunk,
+        "map_merge": map_merge,
+        "node_expand": node_expand,
+        "node_split": node_split,
+        "node_merge": node_merge,
+        "node_simplify": node_simplify,
+    }

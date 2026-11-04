@@ -38,3 +38,13 @@ describe("mapData", () => {
     expect(formatSlideList([3, 1, 2])).toBe("1, 2 and 3");
   });
 });
+
+describe("structure round trip", () => {
+  it("mind-elixir tree → payload matches stored structure", async () => {
+    const { fromMindElixir, treeOf, siblingsOf } = await import("./mapData");
+    const t = toMindElixir(doc);
+    expect(fromMindElixir(t)).toEqual(treeOf(doc));
+    expect(siblingsOf(doc, "a")).toEqual([{ id: "b", label: "B" }]);
+    expect(siblingsOf(doc, "r")).toEqual([]);
+  });
+});

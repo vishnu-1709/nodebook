@@ -50,3 +50,38 @@ export function formatSlideList(slides: number[]): string {
   if (s.length <= 1) return s.join("");
   return `${s.slice(0, -1).join(", ")} and ${s[s.length - 1]}`;
 }
+
+export interface TreeIn {
+  id: string;
+  label: string;
+  collapsed: boolean;
+  children: TreeIn[];
+}
+
+/** Mind-Elixir tree → structure payload for PUT /map/structure. */
+export function fromMindElixir(n: NodeObj): TreeIn {
+  return {
+    id: n.id,
+    label: n.topic,
+    collapsed: n.expanded === false,
+    children: (n.children ?? []).map(fromMindElixir),
+  };
+}
+
+/** Same shape built from our stored doc (for change detection). */
+export function treeOf(doc: MapDoc, id: string = doc.root_id): TreeIn {
+  const n = doc.nodes[id]!;
+  return {
+    id,
+    label: n.label,
+    collapsed: n.collapsed,
+    children: n.children.filter((c) => doc.nodes[c]).map((c) => treeOf(doc, c)),
+  };
+}
+
+export function siblingsOf(doc: MapDoc, id: string): { id: string; label: string }[] {
+  const n = doc.nodes[id];
+  if (!n?.parent_id) return [];
+  const p = doc.nodes[n.parent_id];
+  return (p?.children ?? []).filter((c) => c !== id && doc.nodes[c]).map((c) => ({ id: c, label: doc.nodes[c]!.label }));
+}

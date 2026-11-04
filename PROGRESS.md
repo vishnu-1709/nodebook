@@ -1,6 +1,6 @@
 # Nodebook — Progress
 
-## Current milestone: M3 — Map editing + AI node actions
+## Current milestone: M4 — Side panel + Focus + thread
 
 ### Plan (M1)
 1. Backend core: `core/paths.py` (data-folder sandbox), `core/storage.py` (atomic JSON, per-file locks,
@@ -30,10 +30,20 @@
   lecture screen renders the map with Mind-Elixir, coverage + fallback banners, slide preview modal.
 - Tests: 38 pytest, 6 vitest.
 
+- M3 complete: `backend/core/maps.py` — editor sends the whole structure (`PUT /map/structure`),
+  server reconciles keeping node ids/sources/status; deleted/merged nodes re-home threads, recent
+  doubts, notes and practice items to the nearest surviving ancestor. AI node actions
+  (`backend/pipeline/node_actions.py`, prompt `node_actions.md`): expand / split / merge with sibling /
+  simplify → preview dialog (editable) → apply. "Add to map" for uncovered slides. UI: Mind-Elixir
+  editing (Tab/Enter/F2/Del/drag/undo), right-click menu, status chips, delete confirm.
+- Tests: 48 pytest, 8 vitest.
+
 ### Next 3 steps
-1. M3: map edit API (rename/add/delete/move/collapse/status) preserving IDs, sources, threads, practice
-2. M3: AI node actions (expand/split/merge/simplify) with preview → apply
-3. M3: wire Mind-Elixir editing + right-click menu + "add uncovered slides" action
+1. M4: threads backend (recent.json 7-day expiry, keep/unkeep, keep-all setting), node_answer prompt
+   (normal / try_first / hint, explain why / example), SSE streaming endpoint
+2. M4: SidePanel component (breadcrumb, slides, status, Test me button, tabs Thread/Notes/Practice, ask
+   box) + Focus mode (F / Esc) keeping draft + scroll
+3. M4: kept-count badges on map, "Keep this?" nudge, undo un-keep for 5 s
 
 ## Decisions
 - **Integration branch:** the cloud harness only allows pushing to `claude/gallant-cray-mdaoqn`, so that
@@ -47,6 +57,11 @@
 - If only one of the two model slots is set, both features use that model.
 - Single-chunk decks (≤ 12 slides) skip the merge LLM call; caps are still enforced in code.
 - A top-level topic named like the lecture is lifted (its children move up a level).
+- Map editor sync: rather than translating each Mind-Elixir operation, the client sends the full
+  tree after any change (debounced 300 ms) and the server reconciles. Robust to undo/redo and drag.
+- New nodes created in the editor get ULIDs client-side (`frontend/src/lib/ulid.ts`).
+- "Add uncovered slides" adds one node per slide under the root, labelled by the slide title.
+- AI node actions use the study model (they're small, frequent calls).
 - Derived slide data (extracted text + thumbnails) cached at `courses/<id>/derived/<source_id>/`
   (rebuildable from the source file; not in SPEC §3 layout).
 
