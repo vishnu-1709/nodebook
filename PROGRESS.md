@@ -102,6 +102,8 @@
 | Generate | `generate.png` | ✅ two columns, 2×2 Make cards, 3 action buttons, AI tag |
 | Course page | (UI.md §3.7) | ✅ tabs, stacked status bars, legend |
 | Quick note | (UI.md §3.9) | ✅ popover, destination chip |
+| Collapsible sidebar | (UI.md §2) | ✅ 56px rail with bold "N" (expands on click), icons + course initials with tooltips, inbox badge visible, Ctrl/Cmd+B, remembered per screen type, lecture map opens collapsed (`rail-light.png`) |
+| Map editing controls | (UI.md §3.2) | ✅ double-click/F2 rename inline (never Focus), Tab/Enter add, Delete/Backspace with undo toast, drag, arrow collapse, F = Focus, Ctrl/Cmd+Z / Shift+Z synced to the server; right-click Rename · Add child · Add sibling · AI … · Delete; ? lists map keys |
 | Today | `today.png` | ✅ header + actions, next-action cards (v0.1: Weak topics + Next exam), Upcoming reminders card (tag filter, overdue in confused colour, complete checkbox), lectures card with stacked bars + legend + dashed add |
 | Reminder popover | (UI.md §3.9) | ✅ parsed date + tag chips before confirm, optional link to current topic |
 | Break screen | (UI.md §3.9) | ✅ full overlay, remaining time, Skip break |

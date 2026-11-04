@@ -168,7 +168,8 @@ Tags: **[v0.1]** or **[v0.2]**. Each has acceptance criteria (AC).
 
 ### 5.1 Shell & navigation [v0.1]
 - Sidebar: Today, Review (due count), Notes inbox (count), course list, + New course. Wordmark "Nodebook" (text only, no logo).
-- Global shortcuts: `N` quick note, `G` generate, `P` pomodoro, `R` reminder, `F` expand panel, `Esc` close/collapse, `?` shortcut list. Disabled while typing in inputs.
+- Global shortcuts: `N` quick note, `G` generate, `P` pomodoro, `R` reminder, `F` expand panel, `Esc` close/collapse, `?` shortcut list, `Ctrl/Cmd+B` collapse/expand the sidebar. Disabled while typing in inputs (except Esc).
+- Sidebar collapses to a 56px icon rail; the lecture map opens with it collapsed; the last choice is remembered per screen type.
 - Theme: light / dark / follow system (default). Dark = `#15171C` ground, off-white text — never pure black/white.
 - **AC:** every screen reachable in ≤ 2 clicks from Today; shortcuts work from every screen.
 
@@ -179,8 +180,8 @@ Tags: **[v0.1]** or **[v0.2]**. Each has acceptance criteria (AC).
 
 ### 5.3 Mind map [v0.1]
 - Render with Mind-Elixir. Node shows label, status dot, kept-question count badge.
-- Edit: rename, add child/sibling, delete, drag to move, collapse.
-- AI node actions (right-click): Expand into subtopics, Split, Merge with sibling, Simplify label. Results are previewed before applying.
+- Edit: double-click or F2 rename inline, Tab add child, Enter add sibling, Delete/Backspace delete (undo toast), drag to move, click the arrow to collapse/expand; Ctrl/Cmd+Z undo and Ctrl/Cmd+Shift+Z redo for all map edits. F or the Expand button opens the selected node in Focus mode (double-click never does).
+- Right-click menu: Rename, Add child, Add sibling, AI: Expand into subtopics / Split / Merge with sibling / Simplify label, Delete. AI results are previewed before applying.
 - Edits preserve node IDs, sources, threads and practice items.
 - Coverage banner for uncovered slides.
 - **AC:** rename/move a node → its thread and cards still attached after reload.

@@ -1,5 +1,6 @@
-import { useEffect } from "react";
-import { Outlet } from "react-router-dom";
+import { useEffect, useRef } from "react";
+import { Outlet, useLocation } from "react-router-dom";
+import { isCollapsed, screenType, useSidebar } from "./sidebar";
 import { useSettings } from "../api/hooks";
 import { anyModalOpen } from "../components/Modal";
 import { NewCourseDialog } from "../components/NewCourseDialog";
@@ -20,6 +21,13 @@ export function Shell() {
   const close = useUi((s) => s.close);
   const settings = useSettings();
   const toast = useUi((s) => s.toast);
+  const location = useLocation();
+  const stype = screenType(location.pathname);
+  const prefs = useSidebar((s) => s.prefs);
+  const toggleSidebar = useSidebar((s) => s.toggle);
+  const collapsed = isCollapsed(prefs, stype);
+  const stypeRef = useRef(stype);
+  stypeRef.current = stype;
 
   useEffect(() => {
     if (settings.data) applyTheme(settings.data.theme);
@@ -48,6 +56,9 @@ export function Shell() {
         case "reminder":
           if (!emitShortcut(action)) open(action);
           break;
+        case "toggle_sidebar":
+          useSidebar.getState().toggle(stypeRef.current);
+          break;
         case "pomodoro": {
           const p = usePomodoro.getState();
           p.set(toggle(p.s, Date.now()));
@@ -65,8 +76,8 @@ export function Shell() {
   }, [open, close]);
 
   return (
-    <div className="shell">
-      <Sidebar />
+    <div className={collapsed ? "shell rail-mode" : "shell"}>
+      <Sidebar collapsed={collapsed} onToggle={() => toggleSidebar(stype)} />
       <main className="main">
         <Outlet />
       </main>

@@ -68,6 +68,12 @@ Never pure black or pure white backgrounds in dark mode.
 
 - **Left sidebar** 240px, `--surface`, right border. Top: wordmark **"Nodebook"** (text only, 18/700). Nav: Today · Review (due badge) · Notes inbox (count). Section label **COURSES**, course list, **+ New course** (dashed border button). Bottom: Settings, Shortcuts `?`, Ollama status line (green dot + model name, or orange "Ollama not running").
 - Active nav item: `--accent-soft` bg, 600.
+- **Collapsible:** toggle button at the top of the sidebar + `Ctrl/Cmd+B`. Collapsed = **56px icon
+  rail**: a bold **"N"** (wordmark font, 18/700) at the top instead of "Nodebook" (clicking it expands
+  the sidebar), then icons for Today · Review · Notes inbox and courses as initials; labels as
+  tooltips; badges still visible. The **lecture map screen opens collapsed by default**; the user can
+  expand it. The last choice is remembered **per screen type** (Today, Course, Lecture map, …).
+  Focus mode and Review session stay sidebar-free.
 - **Pomodoro chip** in the top-right of every screen's header (and in Focus/Review headers): clock icon when idle; `18:42` mono when running; click opens a small popover (start/pause, preset, skip).
 - On narrow widths (<900px) the sidebar collapses to a top bar with a menu button.
 
@@ -105,8 +111,15 @@ Never pure black or pure white backgrounds in dark mode.
   square or ≤ 4px rounded corners. No curves, no diagonals, no underline-style nodes.
 - Layout: root left, children to the right (Mind-Elixir right-side layout). On load and after regenerate: **fit to view**.
 - New node default label "New topic", opens straight into edit mode.
-- Right-click menu: Expand · Split · Merge with… · Simplify · Delete. AI results show a preview diff (green new nodes) with Apply / Cancel.
-- Footer hint chips under the canvas: "Right-click a node: Expand · Split · Merge · Simplify" · "Drag to rearrange".
+- **Editing controls:** double-click or `F2` = rename inline (double-click never opens Focus) ·
+  `Tab` = add child · `Enter` = add sibling · `Delete`/`Backspace` = delete (with an undo toast) ·
+  drag = move · click the arrow = collapse/expand · `F` or the **Expand** button = open the selected
+  node in Focus mode · `Ctrl/Cmd+Z` undo, `Ctrl/Cmd+Shift+Z` redo for all map edits.
+- Right-click menu: Rename · Add child · Add sibling · AI: Expand / Split / Merge with… / Simplify ·
+  Delete. AI results show a preview diff (green new nodes) with Apply / Cancel.
+- Hint line above the canvas: "Click a node to open it · F to expand · double-click to rename".
+  Footer hint chips: "Tab child · Enter sibling · Del delete" · "Right-click: AI Expand · Split ·
+  Merge · Simplify" · "Drag to move · Ctrl/Cmd+Z undo".
 
 **Side panel** (right, 420px, surface, left border, padding 20×24), shown when a node is selected:
 1. Breadcrumb (13 muted) + node title (22/700) · **Expand `F`** button top-right.

@@ -22,6 +22,12 @@ describe("shortcuts", () => {
     expect(actionFor({ key: "n", target: document.createElement("button") })).toBe("quick_note");
   });
 
+  it("Ctrl/Cmd+B toggles the sidebar, not while typing", () => {
+    expect(actionFor({ key: "b", ctrlKey: true })).toBe("toggle_sidebar");
+    expect(actionFor({ key: "B", metaKey: true })).toBe("toggle_sidebar");
+    expect(actionFor({ key: "b", ctrlKey: true, target: document.createElement("textarea") })).toBeNull();
+  });
+
   it("ignores modified keys", () => {
     expect(actionFor({ key: "r", ctrlKey: true })).toBeNull();
     expect(actionFor({ key: "n", metaKey: true })).toBeNull();

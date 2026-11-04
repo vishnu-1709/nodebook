@@ -63,11 +63,9 @@ export function LectureScreen() {
   const counts = useKeptCounts(courseId, lectureId, status === "ready");
 
   const studied = useCallback((id: string) => muts.patchNode.mutate({ id, studied: true }), [muts.patchNode]);
-  const openFocus = useCallback((id: string) => {
-    setSelected(id);
-    setFocus(true);
-    studied(id);
-  }, [studied]);
+  const [deleted, setDeleted] = useState<string[] | null>(null);
+  const undoTimer = useRef<number | null>(null);
+  const undoRef = useRef<{ undo: () => void; redo: () => void } | null>(null);
   const toggleFocus = useCallback(() => {
     if (!selected) return;
     if (!focus) studied(selected);
@@ -101,35 +99,32 @@ export function LectureScreen() {
   const doc = map.data;
   const node = selected && doc ? doc.nodes[selected] : undefined;
 
-  const confirmDelete = useCallback(
-    (ids: string[]) => {
-      if (!doc) return true;
-      if (ids.includes(doc.root_id)) return false;
-      const withKids = ids.some((id) => (doc.nodes[id]?.children.length ?? 0) > 0);
-      const names = ids.map((id) => `“${doc.nodes[id]?.label ?? ""}”`).join(", ");
-      return window.confirm(`Delete ${names}${withKids ? " and everything under it" : ""}? Questions, notes and cards on it move to its parent.`);
-    },
-    [doc],
-  );
+  // No confirm dialog: deletes are undoable (toast + Ctrl/Cmd+Z). The root can't be deleted.
+  const confirmDelete = useCallback((ids: string[]) => !doc || !ids.includes(doc.root_id), [doc]);
 
   const runAction = (id: string, action: NodeAction, sibling_id?: string) => {
     setAiError("");
     muts.suggest.mutate({ id, action, sibling_id }, { onSuccess: setProposal, onError: (e) => setAiError(errorMessage(e)) });
   };
-  const removeNode = (id: string) => {
+  const withEl = (id: string, fn: (inst: MindInstance, el: ReturnType<MindInstance["findEle"]>) => void) => {
     try {
-      const t = me.current?.findEle(id);
-      if (t) void me.current?.removeNodes([t]);
-    } catch { /* gone */ }
+      const inst = me.current;
+      if (inst) fn(inst, inst.findEle(id));
+    } catch { /* collapsed or gone */ }
   };
+  const removeNode = (id: string) => withEl(id, (inst, el) => void inst.removeNodes([el]));
 
   const menuItems = (id: string, d: MapDoc): MenuItem[] => {
     const isRoot = id === d.root_id;
     return [
-      { label: "Expand into subtopics", onSelect: () => runAction(id, "expand") },
-      { label: "Split", onSelect: () => runAction(id, "split"), disabled: isRoot },
-      ...(isRoot ? [] : [{ label: "Merge with…", submenu: siblingsOf(d, id).map((s) => ({ label: s.label, onSelect: () => runAction(id, "merge", s.id) })) }]),
-      { label: "Simplify label", onSelect: () => runAction(id, "simplify") },
+      { label: "Rename", hint: "F2", onSelect: () => withEl(id, (inst, el) => void inst.beginEdit(el)) },
+      { label: "Add child", hint: "Tab", onSelect: () => withEl(id, (inst, el) => void inst.addChild(el)) },
+      { label: "Add sibling", hint: "Enter", disabled: isRoot, onSelect: () => withEl(id, (inst, el) => void inst.insertSibling("after", el)) },
+      { separator: true, label: "" },
+      { label: "AI: Expand into subtopics", onSelect: () => runAction(id, "expand") },
+      { label: "AI: Split", onSelect: () => runAction(id, "split"), disabled: isRoot },
+      ...(isRoot ? [] : [{ label: "AI: Merge with…", submenu: siblingsOf(d, id).map((s) => ({ label: s.label, onSelect: () => runAction(id, "merge", s.id) })) }]),
+      { label: "AI: Simplify label", onSelect: () => runAction(id, "simplify") },
       { separator: true, label: "" },
       { label: "Delete", hint: "Del", onSelect: () => removeNode(id), disabled: isRoot, danger: true },
     ];
@@ -183,7 +178,7 @@ export function LectureScreen() {
         {view === "map" && (
           <div className="map-wrap">
             <div className="map-meta">
-              <span>Click a node to open it in the side panel · double-click or F to expand</span>
+              <span>Click a node to open it · F to expand · double-click to rename</span>
               <span className="spacer" />
               {doc && <span className="mono">{nNodes} nodes · from {nSlides} slides</span>}
             </div>
@@ -234,7 +229,12 @@ export function LectureScreen() {
                   editable
                   selectedId={selected}
                   onSelect={setSelected}
-                  onOpen={openFocus}
+                  onDeleted={(labels) => {
+                    if (undoTimer.current) window.clearTimeout(undoTimer.current);
+                    setDeleted(labels);
+                    undoTimer.current = window.setTimeout(() => setDeleted(null), 6000);
+                  }}
+                  undoRef={undoRef}
                   onStructure={(tree) => muts.structure.mutate(tree)}
                   onContextMenu={(id, x, y) => setMenu({ id, x, y })}
                   confirmDelete={confirmDelete}
@@ -244,9 +244,9 @@ export function LectureScreen() {
               {status === "ready" && map.isError && <p className="banner banner-error">{errorMessage(map.error)}</p>}
             </div>
             <div className="map-hints">
-              <span>Right-click a node: Expand · Split · Merge · Simplify</span>
-              <span>Drag to rearrange</span>
-              <span>Tab child · Enter sibling · F2 rename</span>
+              <span>Tab child · Enter sibling · Del delete</span>
+              <span>Right-click: AI Expand · Split · Merge · Simplify</span>
+              <span>Drag to move · Ctrl/Cmd+Z undo</span>
             </div>
           </div>
         )}
@@ -275,6 +275,12 @@ export function LectureScreen() {
         )}
       </div>
 
+      {deleted && (
+        <div className="app-toast row" role="status">
+          <span>Deleted {deleted.length === 1 ? `“${deleted[0]}”` : `${deleted.length} nodes`}.</span>
+          <button className="btn btn-sm undo-btn" onClick={() => { undoRef.current?.undo(); setDeleted(null); }}>Undo</button>
+        </div>
+      )}
       {menu && doc && doc.nodes[menu.id] && <ContextMenu x={menu.x} y={menu.y} items={menuItems(menu.id, doc)} onClose={() => setMenu(null)} />}
       {moreMenu && <ContextMenu x={moreMenu.x} y={moreMenu.y} items={moreItems} onClose={() => setMoreMenu(null)} />}
       {proposal && doc && (

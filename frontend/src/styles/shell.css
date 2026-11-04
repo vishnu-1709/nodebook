@@ -158,3 +158,25 @@
 .tag-chip.tag-4 { color: var(--tag-4); } .tag-chip.tag-5 { color: var(--tag-5); } .tag-chip.tag-6 { color: var(--tag-6); }
 .today-row { grid-template-columns: minmax(160px, 1.2fr) 2fr 90px; }
 .today-row .lecture-link { text-align: left; font-size: 15px; }
+.undo-btn { min-height: 28px; background: transparent; color: var(--on-ink); border-color: var(--on-ink); }
+/* Collapsible sidebar — UI.md §2 */
+.shell { transition: grid-template-columns var(--ease); }
+.shell.rail-mode { grid-template-columns: 56px 1fr; }
+.side-top { display: flex; align-items: center; justify-content: space-between; padding-bottom: var(--space-5); }
+.side-top .wordmark { padding: 0 var(--space-3); }
+.side-toggle { width: 32px; height: 32px; border: none; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.side-toggle:hover { background: var(--surface-2); color: var(--text); }
+.sidebar.rail { padding: var(--space-4) 6px; align-items: center; overflow-x: hidden; }
+.sidebar.rail .side-top { padding-bottom: var(--space-4); justify-content: center; }
+.rail-mark { width: 40px; height: 40px; border: none; border-radius: var(--r-btn); background: transparent; color: var(--text); font-family: var(--font-sans); font-size: 18px; font-weight: 700; cursor: pointer; }
+.rail-mark:hover { background: var(--surface-2); }
+.sidebar.rail .nav-link { width: 44px; min-height: 40px; padding: 0; justify-content: center; position: relative; }
+.rail-icon { display: inline-flex; color: var(--text-2); }
+.nav-link.active .rail-icon { color: var(--text); }
+.rail-initials { font-size: 12px; font-weight: 600; color: var(--text-2); letter-spacing: 0.02em; }
+.rail-badge { position: absolute; top: 3px; right: 2px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--accent); color: var(--on-accent); font-family: var(--font-mono); font-size: 10px; line-height: 16px; text-align: center; }
+.rail-sep { width: 24px; height: 1px; background: var(--border); margin: var(--space-3) 0; }
+.rail-add { width: 36px; height: 36px; margin-top: var(--space-2); border: 1px dashed var(--accent-border); border-radius: var(--r-btn); background: transparent; color: var(--accent); cursor: pointer; font-size: 16px; }
+.sidebar.rail .sidebar-foot { align-items: center; }
+.sidebar.rail .ollama-line { width: 36px; height: 32px; justify-content: center; padding: 0; }
+@media (max-width: 900px) { .shell.rail-mode { grid-template-columns: 1fr; } .side-toggle, .rail-mark { display: none; } .sidebar.rail .wordmark { display: block; } }

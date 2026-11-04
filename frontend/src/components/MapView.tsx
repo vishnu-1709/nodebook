@@ -3,6 +3,7 @@ import "mind-elixir/style.css";
 import { useEffect, useRef } from "react";
 import type { MapDoc } from "../api/types";
 import { ulid } from "../lib/ulid";
+import { isTypingTarget } from "../app/shortcuts";
 import { mainBranch, subBranch } from "./connectors";
 import { fromMindElixir, toMindElixir, treeOf, type NodeMeta, type TreeIn } from "./mapData";
 
@@ -20,8 +21,9 @@ interface Props {
   /** Return false to cancel a delete (e.g. after a confirm()). */
   confirmDelete?: (nodeIds: string[]) => boolean;
   onReady?: (me: MindInstance) => void;
-  /** Double-click a node (UI: double-click or F to expand into Focus). */
-  onOpen?: (nodeId: string) => void;
+  /** After a delete, so the screen can offer an undo toast. */
+  onDeleted?: (labels: string[]) => void;
+  undoRef?: { current: { undo: () => void; redo: () => void } | null };
 }
 
 function applyData(inst: MindElixir<NodeMeta>, data: MindElixirData<NodeMeta>): void {
@@ -84,7 +86,7 @@ const THEME: Theme<NodeMeta> = {
 };
 
 export function MapView(props: Props) {
-  const { doc, keptCounts, editable = false, selectedId } = props;
+  const { doc, keptCounts, editable = false, selectedId, undoRef } = props;
   const host = useRef<HTMLDivElement>(null);
   const me = useRef<MindInstance | null>(null);
   const cb = useRef(props);
@@ -142,14 +144,16 @@ export function MapView(props: Props) {
       if (!(e.target as HTMLElement).closest(".me-tpc")) markMoved();
     });
     fitRef.current = () => { userMoved = false; fit(); };
-    const onDbl = (e: MouseEvent) => {
-      const tpc = (e.target as HTMLElement).closest(".me-tpc") as (HTMLElement & { nodeObj?: NodeObj }) | null;
-      if (!tpc?.nodeObj || !cb.current.onOpen) return;
-      e.preventDefault();
-      e.stopPropagation();
-      cb.current.onOpen(tpc.nodeObj.id);
+    // Ctrl/Cmd+Z / Shift+Z also work when focus is elsewhere on the screen (not while typing)
+    const onUndoKey = (e: KeyboardEvent) => {
+      if (!editable || !(e.ctrlKey || e.metaKey) || el.contains(e.target as Node) || isTypingTarget(e.target)) return;
+      const k = e.key.toLowerCase();
+      if (k === "z" || k === "y") {
+        e.preventDefault();
+        if (k === "y" || e.shiftKey) inst.redo(); else inst.undo();
+      }
     };
-    el.addEventListener("dblclick", onDbl, true);
+    window.addEventListener("keydown", onUndoKey);
     inst.bus.addListener("selectNodes", (nodes: NodeObj[]) => {
       const n = nodes[0];
       cb.current.onSelect?.(n ? n.id : null);
@@ -168,7 +172,16 @@ export function MapView(props: Props) {
         }
       }, 300);
     };
-    if (editable) inst.bus.addListener("operation", sync);
+    if (editable) {
+      inst.bus.addListener("operation", sync);
+      inst.bus.addListener("refresh", sync); // undo / redo restore through refresh
+      inst.bus.addListener("operation", (op) => {
+        if (op.name === "removeNodes" && !op.silent) {
+          const targets = Array.isArray(op.target) ? op.target : [op.target];
+          cb.current.onDeleted?.(targets.map((t) => t.topic));
+        }
+      });
+    }
 
     const onCtx = (e: MouseEvent) => {
       const tpc = (e.target as HTMLElement).closest(".me-tpc") as (HTMLElement & { nodeObj?: NodeObj }) | null;
@@ -185,7 +198,7 @@ export function MapView(props: Props) {
       window.clearTimeout(timer);
       ro.disconnect();
       el.removeEventListener("contextmenu", onCtx);
-      el.removeEventListener("dblclick", onDbl, true);
+      window.removeEventListener("keydown", onUndoKey);
       inst.destroy();
       me.current = null;
     };
@@ -217,6 +230,10 @@ export function MapView(props: Props) {
       /* collapsed or gone */
     }
   }, [selectedId, sig]);
+
+  useEffect(() => {
+    if (undoRef) undoRef.current = { undo: () => me.current?.undo(), redo: () => me.current?.redo() };
+  }, [undoRef]);
 
   return (
     <>
