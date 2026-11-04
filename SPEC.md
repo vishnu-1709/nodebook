@@ -272,6 +272,8 @@ Tags: **[v0.1]** or **[v0.2]**. Each has acceptance criteria (AC).
 
 ## 6. UI reference
 
+**The full UI spec is in `UI.md`, with reference mockups in `docs/ui/` (PNG + HTML). Follow it exactly; library defaults never override it.**
+
 Screens: Today · Course · Lecture map + side panel · Focus mode · Generate · Review session · Settings/Onboarding.
 
 Tokens (light): ground `#F4F5F7`, surface `#FFFFFF`, border `#E3E6EB`, text `#16181D`, muted `#5B616E`, accent `#2F4FC9`.
