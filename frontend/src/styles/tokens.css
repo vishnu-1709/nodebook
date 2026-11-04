@@ -1,0 +1,108 @@
+/* Design tokens (SPEC §6). All colours in the app come from here. */
+:root {
+  --ground: #f4f5f7;
+  --surface: #ffffff;
+  --surface-2: #f9fafb;
+  --border: #e3e6eb;
+  --border-strong: #c9ced6;
+  --text: #16181d;
+  --muted: #5b616e;
+  --accent: #2f4fc9;
+  --accent-text: #ffffff;
+  --accent-soft: #e8ecfa;
+  --danger: #b42318;
+  --danger-soft: #fdecea;
+  --focus-ring: #2f4fc9;
+  --overlay: rgba(22, 24, 29, 0.35);
+
+  --status-got-it: #0f766e;
+  --status-revising: #fbbf24;
+  --status-confused: #ea580c;
+  --status-not-started: #8a909c;
+
+  --tag-1: #2f4fc9;
+  --tag-2: #0f766e;
+  --tag-3: #ea580c;
+  --tag-4: #7c3aed;
+  --tag-5: #be185d;
+  --tag-6: #5b616e;
+
+  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --radius: 8px;
+  --radius-sm: 6px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --sidebar-w: 240px;
+  --panel-w: 420px;
+  --target: 44px;
+  --transition: 150ms ease;
+  --shadow: 0 1px 2px rgba(22, 24, 29, 0.06), 0 4px 16px rgba(22, 24, 29, 0.06);
+  color-scheme: light;
+}
+
+
+:root[data-theme="dark"] {
+  --ground: #15171c;
+  --surface: #1d2027;
+  --surface-2: #22262e;
+  --border: #2e333d;
+  --border-strong: #3d4350;
+  --text: #e8eaee;
+  --muted: #a0a6b2;
+  --accent: #7d95ee;
+  --accent-text: #15171c;
+  --accent-soft: #252c45;
+  --danger: #f28b82;
+  --danger-soft: #3a2422;
+  --focus-ring: #7d95ee;
+  --overlay: rgba(0, 0, 0, 0.5);
+  --status-got-it: #2dd4bf;
+  --status-revising: #fbbf24;
+  --status-confused: #fb923c;
+  --status-not-started: #8a909c;
+  --tag-1: #7d95ee;
+  --tag-2: #2dd4bf;
+  --tag-3: #fb923c;
+  --tag-4: #a78bfa;
+  --tag-5: #f472b6;
+  --tag-6: #a0a6b2;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.25);
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) {
+    --ground: #15171c;
+    --surface: #1d2027;
+    --surface-2: #22262e;
+    --border: #2e333d;
+    --border-strong: #3d4350;
+    --text: #e8eaee;
+    --muted: #a0a6b2;
+    --accent: #7d95ee;
+    --accent-text: #15171c;
+    --accent-soft: #252c45;
+    --danger: #f28b82;
+    --danger-soft: #3a2422;
+    --focus-ring: #7d95ee;
+    --overlay: rgba(0, 0, 0, 0.5);
+    --status-got-it: #2dd4bf;
+    --status-revising: #fbbf24;
+    --status-confused: #fb923c;
+    --status-not-started: #8a909c;
+    --tag-1: #7d95ee;
+    --tag-2: #2dd4bf;
+    --tag-3: #fb923c;
+    --tag-4: #a78bfa;
+    --tag-5: #f472b6;
+    --tag-6: #a0a6b2;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.25);
+    color-scheme: dark;
+  }
+}
