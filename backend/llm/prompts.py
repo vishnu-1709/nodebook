@@ -17,7 +17,9 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
-PROMPTS_DIR = Path(__file__).resolve().parent.parent / "prompts"
+from backend.core.resources import prompts_dir
+
+PROMPTS_DIR = prompts_dir()
 
 _HEADER = re.compile(r"<!--\s*prompt:\s*(?P<name>[\w-]+)\s*·\s*version:\s*(?P<ver>\d+)\s*-->")
 _SECTION = re.compile(r"^##\s+(?P<name>[\w: -]+?)\s*$", re.MULTILINE)

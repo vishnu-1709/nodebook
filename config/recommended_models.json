@@ -1,0 +1,39 @@
+{
+  "schema": 1,
+  "note": "Edit freely: Nodebook reads this at startup. Tiers are picked by total system RAM (GB). Model names are Ollama tags.",
+  "tiers": [
+    {
+      "min_ram_gb": 0,
+      "label": "Under 8 GB RAM",
+      "map": [{"name": "qwen2.5:3b", "size_gb": 1.9, "why": "Smallest model that still returns clean JSON for maps."}],
+      "study": [{"name": "llama3.2:3b", "size_gb": 2.0, "why": "Fast answers on low-memory machines."}]
+    },
+    {
+      "min_ram_gb": 8,
+      "label": "8–16 GB RAM",
+      "map": [
+        {"name": "qwen2.5:7b", "size_gb": 4.7, "why": "Good topic structure, reliable JSON."},
+        {"name": "gemma3:4b", "size_gb": 3.3, "why": "Smaller, can read slide images (vision).", "vision": true}
+      ],
+      "study": [{"name": "llama3.2:3b", "size_gb": 2.0, "why": "Quick answers while you study."}]
+    },
+    {
+      "min_ram_gb": 16,
+      "label": "16–32 GB RAM",
+      "map": [
+        {"name": "qwen2.5:14b", "size_gb": 9.0, "why": "Clearly better maps on long decks."},
+        {"name": "gemma3:12b", "size_gb": 8.1, "why": "Reads figure-only slides (vision).", "vision": true}
+      ],
+      "study": [{"name": "qwen2.5:7b", "size_gb": 4.7, "why": "Better explanations, still quick."}]
+    },
+    {
+      "min_ram_gb": 32,
+      "label": "32 GB RAM or more",
+      "map": [
+        {"name": "qwen2.5:32b", "size_gb": 20.0, "why": "Best maps a laptop can run."},
+        {"name": "gemma3:27b", "size_gb": 17.0, "why": "Strong, with vision.", "vision": true}
+      ],
+      "study": [{"name": "qwen2.5:14b", "size_gb": 9.0, "why": "Careful answers and grading."}]
+    }
+  ]
+}

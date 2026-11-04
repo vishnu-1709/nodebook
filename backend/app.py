@@ -10,7 +10,7 @@ from fastapi import APIRouter, FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
-from backend.api import courses, generate, jobs, lectures, maps, notes, ollama, practice, reminders, settings, testme, threads
+from backend.api import courses, generate, jobs, lectures, maps, notes, ollama, practice, reminders, settings, system, testme, threads
 from backend.core.context import AppContext
 from backend.core.courses import NotFound
 from backend.core.paths import PathError
@@ -18,7 +18,9 @@ from backend.core.settings import SettingsStore
 from backend.core.storage import MigrationError
 from backend.llm.base import LLMError, LLMProvider
 
-STATIC_DIR = Path(__file__).resolve().parent / "static"
+from backend.core.resources import static_dir as _static_dir
+
+STATIC_DIR = _static_dir()
 
 
 def create_app(
@@ -66,7 +68,7 @@ def create_app(
     def health() -> dict[str, str]:
         return {"status": "ok"}
 
-    for r in (courses.router, lectures.router, maps.router, threads.router, testme.router, notes.router, practice.router, generate.router, reminders.router, settings.router, jobs.router, ollama.router):
+    for r in (courses.router, lectures.router, maps.router, threads.router, testme.router, notes.router, practice.router, generate.router, reminders.router, system.router, settings.router, jobs.router, ollama.router):
         api.include_router(r)
     app.include_router(api)
 
