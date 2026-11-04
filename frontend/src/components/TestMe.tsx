@@ -4,7 +4,7 @@ import { useTestMe, type GradeResult, type TestQuestion } from "../api/testme";
 import type { SlideRef } from "../api/types";
 import { Modal } from "./Modal";
 
-const VERDICT: Record<GradeResult["verdict"], string> = { correct: "Correct", partly: "Partly", wrong: "Not quite" };
+const VERDICT: Record<GradeResult["verdict"], string> = { correct: "Correct", partly: "Partly", wrong: "Wrong" };
 
 interface Props {
   courseId: string;
@@ -15,96 +15,90 @@ interface Props {
   onPreview: (refs: SlideRef[], start: number) => void;
 }
 
+/** UI.md §3.4: one question at a time, Check (dark), result row, Next →, score summary. */
 export function TestMe({ courseId, lectureId, nodeId, nodeLabel, onClose, onPreview }: Props) {
   const t = useTestMe(courseId, lectureId, nodeId);
   const [qs, setQs] = useState<TestQuestion[]>([]);
+  const [i, setI] = useState(0);
   const [answers, setAnswers] = useState<string[]>([]);
-  const [results, setResults] = useState<GradeResult[] | null>(null);
+  const [checked, setChecked] = useState<GradeResult[]>([]);
   const [score, setScore] = useState<number | null>(null);
 
   const start = () => {
-    setResults(null);
-    setScore(null);
-    t.start.mutate(undefined, {
-      onSuccess: (r) => {
-        setQs(r.questions);
-        setAnswers(r.questions.map(() => ""));
-      },
-    });
+    setI(0); setChecked([]); setScore(null);
+    t.start.mutate(undefined, { onSuccess: (r) => { setQs(r.questions); setAnswers(r.questions.map(() => "")); } });
   };
   useEffect(start, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const submit = () =>
+  const q = qs[i];
+  const result = checked[i];
+  const last = i === qs.length - 1;
+
+  // Check grades this one answer; after the last, the whole test is saved to results.jsonl.
+  const check = () =>
     t.grade.mutate(
-      qs.map((q, i) => ({ question: q.question, answer: answers[i] ?? "", source: q.source })),
+      { items: [{ question: q!.question, answer: answers[i] ?? "", source: q!.source }], save: false },
       {
         onSuccess: (rec) => {
-          setResults(rec.details.items ?? []);
-          setScore(rec.score);
+          const r = rec.details.items?.[0];
+          if (!r) return;
+          const all = [...checked.slice(0, i), r];
+          setChecked(all);
+          if (last) t.save.mutate(all, { onSuccess: (saved) => setScore(saved.score) });
         },
       },
     );
 
   return (
-    <Modal title={`Test me · ${nodeLabel}`} onClose={onClose} wide>
+    <Modal title={`Test me · ${nodeLabel}`} onClose={onClose}>
       {t.start.isPending && <p className="muted">Writing 3 questions from this topic's slides…</p>}
       {t.start.isError && (
         <div className="banner banner-error">
-          <span>{errorMessage(t.start.error)}</span>
-          <span className="spacer" />
+          <span className="grow">{errorMessage(t.start.error)}</span>
           <button className="btn btn-sm" onClick={start}>Retry</button>
         </div>
       )}
-      {qs.length > 0 && (
-        <form className="stack" onSubmit={(e) => { e.preventDefault(); if (!results) submit(); }}>
-          {qs.map((q, i) => {
-            const r = results?.[i];
-            return (
-              <div key={q.id} className="test-q stack-tight">
-                <label className="field" htmlFor={`tq-${q.id}`}>
-                  <span className="test-q-text">{i + 1}. {q.question}</span>
-                </label>
-                <textarea
-                  id={`tq-${q.id}`}
-                  className="textarea"
-                  rows={2}
-                  value={answers[i] ?? ""}
-                  readOnly={Boolean(results)}
-                  onChange={(e) => setAnswers((a) => a.map((x, j) => (j === i ? e.target.value : x)))}
-                  placeholder="Your answer, in your own words"
-                />
-                {r && (
-                  <p className={`grade grade-${r.verdict} small`}>
-                    <strong>{VERDICT[r.verdict]}.</strong> {r.feedback}{" "}
-                    {r.source && (
-                      <button type="button" className="chip" onClick={() => onPreview([r.source!], 0)}>Slide {r.source.slide}</button>
-                    )}
-                  </p>
-                )}
-              </div>
-            );
-          })}
+      {score !== null ? (
+        <div className="stack">
+          <p className="test-score"><span className="mono">{Math.round(score * 100)}%</span> · {checked.filter((r) => r.verdict === "correct").length} of {qs.length} correct</p>
+          <ul className="note-list">
+            {checked.map((r, j) => (
+              <li key={j} className={`grade grade-${r.verdict}`}><strong>{VERDICT[r.verdict]}</strong> {qs[j]?.question}</li>
+            ))}
+          </ul>
+          <p className="small muted">Saved to this topic's history.</p>
+          <div className="row">
+            <button className="btn" onClick={start}>New questions</button>
+            <span className="spacer" />
+            <button className="btn btn-primary" onClick={onClose}>Back to topic</button>
+          </div>
+        </div>
+      ) : q && (
+        <form className="stack" onSubmit={(e) => { e.preventDefault(); if (!result) check(); else if (!last) setI(i + 1); }}>
+          <p className="mono small muted">{i + 1} / {qs.length}</p>
+          <label htmlFor={`tq-${q.id}`} className="test-q-text">{q.question}</label>
+          <textarea id={`tq-${q.id}`} className="textarea" rows={3} value={answers[i] ?? ""} readOnly={Boolean(result)}
+            placeholder="Your answer" onChange={(e) => setAnswers((a) => a.map((x, j) => (j === i ? e.target.value : x)))} />
+          {result && last && t.save.isPending && <p className="small muted">Saving…</p>}
+          {result && (
+            <p className={`grade grade-${result.verdict}`}>
+              <strong>{VERDICT[result.verdict]}.</strong> {result.feedback}{" "}
+              {result.source && <button type="button" className="slide-chip" onClick={() => onPreview([result.source!], 0)}>Slide {result.source.slide}</button>}
+            </p>
+          )}
           {t.grade.isError && (
             <div className="banner banner-error">
-              <span>{errorMessage(t.grade.error)}</span>
-              <span className="spacer" />
-              <button type="button" className="btn btn-sm" onClick={submit}>Retry</button>
+              <span className="grow">{errorMessage(t.grade.error)}</span>
+              <button type="button" className="btn btn-sm" onClick={check}>Retry</button>
             </div>
           )}
           <div className="row">
-            {score !== null && <span className="mono">{Math.round(score * 100)}%</span>}
-            {score !== null && <span className="small muted">Saved to this topic's history.</span>}
             <span className="spacer" />
-            {results ? (
-              <>
-                <button type="button" className="btn" onClick={start}>New questions</button>
-                <button type="button" className="btn btn-primary" onClick={onClose}>Done</button>
-              </>
-            ) : (
-              <button type="submit" className="btn btn-primary" disabled={t.grade.isPending}>
-                {t.grade.isPending ? "Checking…" : "Check answers"}
-              </button>
-            )}
+            {!result ? (
+              <button type="submit" className="btn btn-dark" disabled={t.grade.isPending}>{t.grade.isPending ? "Checking…" : "Check"}</button>
+            ) : !last ? (
+              <button type="submit" className="btn btn-primary">Next →</button>
+            ) : null}
           </div>
         </form>
       )}

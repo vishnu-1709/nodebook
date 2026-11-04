@@ -5,19 +5,36 @@ import { errorMessage } from "../api/client";
 import { useCourse } from "../api/hooks";
 import { lk, useGenerateMap, useLecture, useMap } from "../api/lectures";
 import { useMapMutations, type NodeAction, type Proposal } from "../api/maps";
+import { useKeptCounts } from "../api/threads";
 import type { MapDoc, SlideRef } from "../api/types";
 import { onShortcut, useUi } from "../app/store";
-import { useKeptCounts } from "../api/threads";
-import { SidePanel } from "../components/SidePanel";
-import { NotesTab } from "../components/NotesTab";
-import { PracticeTab } from "../components/PracticeTab";
-import { TestMe } from "../components/TestMe";
 import { ContextMenu, type MenuItem } from "../components/ContextMenu";
 import { JobProgress } from "../components/JobProgress";
+import { LectureNotesView, LectureSourcesView } from "../components/LectureTabs";
 import { MapView, type MindInstance } from "../components/MapView";
 import { formatSlideList, siblingsOf } from "../components/mapData";
+import { NotesTab } from "../components/NotesTab";
+import { PracticeTab } from "../components/PracticeTab";
 import { ProposalDialog } from "../components/ProposalDialog";
+import { ScreenHeader } from "../components/ScreenHeader";
+import { LectureSummary, SidePanel } from "../components/SidePanel";
 import { SlidePreview } from "../components/SlidePreview";
+import { TestMe } from "../components/TestMe";
+
+type View = "map" | "sources" | "notes";
+
+function exportOutline(doc: MapDoc): string {
+  const lines: string[] = [];
+  const walk = (id: string, depth: number) => {
+    const n = doc.nodes[id];
+    if (!n) return;
+    const slides = n.sources.length ? ` (slides ${n.sources.map((s) => s.slide).join(", ")})` : "";
+    lines.push(depth === 0 ? `# ${n.label}` : `${"  ".repeat(depth - 1)}- ${n.label}${slides}`);
+    n.children.forEach((c) => walk(c, depth + 1));
+  };
+  walk(doc.root_id, 0);
+  return lines.join("\n") + "\n";
+}
 
 export function LectureScreen() {
   const { courseId = "", lectureId = "" } = useParams();
@@ -29,10 +46,13 @@ export function LectureScreen() {
   const muts = useMapMutations(courseId, lectureId);
   const qc = useQueryClient();
   const setContext = useUi((s) => s.setContext);
+  const openOverlay = useUi((s) => s.open);
+  const [view, setView] = useState<View>("map");
   const [selected, setSelected] = useState<string | null>(null);
   const [preview, setPreview] = useState<{ refs: SlideRef[]; start: number } | null>(null);
   const [hideCoverage, setHideCoverage] = useState(false);
   const [menu, setMenu] = useState<{ id: string; x: number; y: number } | null>(null);
+  const [moreMenu, setMoreMenu] = useState<{ x: number; y: number } | null>(null);
   const [proposal, setProposal] = useState<Proposal | null>(null);
   const [aiError, setAiError] = useState("");
   const me = useRef<MindInstance | null>(null);
@@ -41,13 +61,25 @@ export function LectureScreen() {
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const counts = useKeptCounts(courseId, lectureId, status === "ready");
 
+  const studied = useCallback((id: string) => muts.patchNode.mutate({ id, studied: true }), [muts.patchNode]);
+  const openFocus = useCallback((id: string) => {
+    setSelected(id);
+    setFocus(true);
+    studied(id);
+  }, [studied]);
   const toggleFocus = useCallback(() => {
-    setFocus((f) => {
-      if (!f && selected) muts.patchNode.mutate({ id: selected, studied: true });
-      return !f;
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selected]);
+    if (!selected) return;
+    if (!focus) studied(selected);
+    setFocus(!focus);
+  }, [selected, focus, studied]);
+
+  useEffect(() => {
+    setContext({ courseId, lectureId, nodeId: selected });
+  }, [courseId, lectureId, selected, setContext]);
+  useEffect(() => () => setContext({ courseId: null, lectureId: null, nodeId: null }), [setContext]);
+  useEffect(() => {
+    if (status === "ready") void qc.invalidateQueries({ queryKey: lk.map(courseId, lectureId) });
+  }, [status, courseId, lectureId, qc]);
 
   useEffect(
     () =>
@@ -57,29 +89,13 @@ export function LectureScreen() {
           return true;
         }
         if (action === "escape") {
-          if (focus) {
-            setFocus(false);
-            return true;
-          }
-          if (selected) {
-            setSelected(null);
-            me.current?.clearSelection();
-            return true;
-          }
+          if (focus) { setFocus(false); return true; }
+          if (selected) { setSelected(null); me.current?.clearSelection(); return true; }
         }
         return false;
       }),
     [selected, focus, toggleFocus],
   );
-
-  useEffect(() => {
-    setContext({ courseId, lectureId, nodeId: selected });
-  }, [courseId, lectureId, selected, setContext]);
-  useEffect(() => () => setContext({ courseId: null, lectureId: null, nodeId: null }), [setContext]);
-
-  useEffect(() => {
-    if (status === "ready") void qc.invalidateQueries({ queryKey: lk.map(courseId, lectureId) });
-  }, [status, courseId, lectureId, qc]);
 
   const doc = map.data;
   const node = selected && doc ? doc.nodes[selected] : undefined;
@@ -90,142 +106,153 @@ export function LectureScreen() {
       if (ids.includes(doc.root_id)) return false;
       const withKids = ids.some((id) => (doc.nodes[id]?.children.length ?? 0) > 0);
       const names = ids.map((id) => `“${doc.nodes[id]?.label ?? ""}”`).join(", ");
-      return window.confirm(
-        `Delete ${names}${withKids ? " and everything under it" : ""}? Questions, notes and cards on it move to its parent.`,
-      );
+      return window.confirm(`Delete ${names}${withKids ? " and everything under it" : ""}? Questions, notes and cards on it move to its parent.`);
     },
     [doc],
   );
 
   const runAction = (id: string, action: NodeAction, sibling_id?: string) => {
     setAiError("");
-    muts.suggest.mutate(
-      { id, action, sibling_id },
-      { onSuccess: setProposal, onError: (e) => setAiError(errorMessage(e)) },
-    );
+    muts.suggest.mutate({ id, action, sibling_id }, { onSuccess: setProposal, onError: (e) => setAiError(errorMessage(e)) });
   };
-
-  const el = (id: string) => {
+  const removeNode = (id: string) => {
     try {
-      return me.current?.findEle(id);
-    } catch {
-      return undefined;
-    }
-  };
-  const edit = {
-    rename: (id: string) => { const t = el(id); if (t) void me.current?.beginEdit(t); },
-    addChild: (id: string) => { const t = el(id); if (t) void me.current?.addChild(t); },
-    addSibling: (id: string) => { const t = el(id); if (t) void me.current?.insertSibling("after", t); },
-    remove: (id: string) => { const t = el(id); if (t) void me.current?.removeNodes([t]); },
+      const t = me.current?.findEle(id);
+      if (t) void me.current?.removeNodes([t]);
+    } catch { /* gone */ }
   };
 
   const menuItems = (id: string, d: MapDoc): MenuItem[] => {
     const isRoot = id === d.root_id;
-    const sibs = siblingsOf(d, id);
     return [
-      { label: "Rename", hint: "F2", onSelect: () => edit.rename(id) },
-      { label: "Add child", hint: "Tab", onSelect: () => edit.addChild(id) },
-      { label: "Add sibling", hint: "Enter", onSelect: () => edit.addSibling(id), disabled: isRoot },
-      { label: "Delete", hint: "Del", onSelect: () => edit.remove(id), disabled: isRoot },
-      { separator: true, label: "" },
       { label: "Expand into subtopics", onSelect: () => runAction(id, "expand") },
       { label: "Split", onSelect: () => runAction(id, "split"), disabled: isRoot },
+      ...(isRoot ? [] : [{ label: "Merge with…", submenu: siblingsOf(d, id).map((s) => ({ label: s.label, onSelect: () => runAction(id, "merge", s.id) })) }]),
       { label: "Simplify label", onSelect: () => runAction(id, "simplify") },
-      ...(isRoot ? [] : [{
-        label: "Merge with sibling",
-        submenu: sibs.map((s) => ({ label: s.label, onSelect: () => runAction(id, "merge", s.id) })),
-      }]),
+      { separator: true, label: "" },
+      { label: "Delete", hint: "Del", onSelect: () => removeNode(id), disabled: isRoot, danger: true },
     ];
   };
+  const moreItems: MenuItem[] = [
+    { label: "Generate", hint: "G", onSelect: () => openOverlay("generate") },
+    { label: "Quick note", hint: "N", onSelect: () => openOverlay("quick_note") },
+    { label: "Regenerate map", disabled: status !== "ready", onSelect: () => {
+      if (window.confirm("Regenerate the map from the slides? Your edits to this map will be replaced.")) gen.mutate();
+    } },
+    { label: "Export outline (.md)", disabled: !doc, onSelect: () => {
+      if (!doc) return;
+      const blob = new Blob([exportOutline(doc)], { type: "text/markdown" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `${lecture.data?.title ?? "map"}.md`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } },
+  ];
 
   if (lecture.isError) return <div className="content"><p className="banner banner-error">{errorMessage(lecture.error)}</p></div>;
   const l = lecture.data;
+  const nNodes = doc ? Object.keys(doc.nodes).length : 0;
+  const nSlides = new Set(doc ? Object.values(doc.nodes).flatMap((n) => n.sources.map((s) => `${s.source_id}:${s.slide}`)) : []).size
+    + (l?.uncovered_slides.length ?? 0);
 
   return (
     <div className="lecture-screen">
-      <header className="topbar">
-        <nav className="breadcrumb small" aria-label="Breadcrumb">
-          <Link to={`/course/${courseId}`}>{course.data?.course.name ?? "Course"}</Link>
-          <span aria-hidden="true"> › </span>
-          <span>{l?.title ?? "…"}</span>
-        </nav>
-        <span className="spacer" />
-        {muts.structure.isPending && <span className="small muted">Saving…</span>}
-        {muts.suggest.isPending && <span className="small muted">Asking the model…</span>}
-        {status === "ready" && (
-          <button
-            className="btn btn-sm"
-            onClick={() => {
-              if (window.confirm("Regenerate the map from the slides? Your edits to this map will be replaced.")) gen.mutate();
-            }}
-          >
-            Regenerate map
-          </button>
-        )}
-      </header>
-
-      <div className="banners">
-        {(status === "queued" || status === "running") && (
-          <div className="banner">
-            <span>Building the map from your slides. You can keep using the app.</span>
-            <span className="spacer" />
-            <JobProgress jobId={l?.map_job_id ?? null} fallbackText="Starting…" />
-          </div>
-        )}
-        {status === "failed" && (
-          <div className="banner banner-error">
-            <span>Map generation failed: {l?.map_error}</span>
-            <span className="spacer" />
-            <button className="btn btn-sm" onClick={() => gen.mutate()}>Retry</button>
-          </div>
-        )}
-        {status === "ready" && l?.map_fallback && (
-          <div className="banner">
-            <span>The model's map didn't pass the checks, so this is a simpler flat map. A larger map model usually does better.</span>
-          </div>
-        )}
-        {status === "ready" && l && l.uncovered_slides.length > 0 && !hideCoverage && (
-          <div className="banner">
-            <span>
-              Slide{l.uncovered_slides.length > 1 ? "s" : ""} {formatSlideList(l.uncovered_slides.map((s) => s.slide))}{" "}
-              {l.uncovered_slides.length > 1 ? "aren't" : "isn't"} in the map — add {l.uncovered_slides.length > 1 ? "them" : "it"}?
-            </span>
-            <span className="spacer" />
-            <button className="btn btn-sm" onClick={() => setPreview({ refs: l.uncovered_slides, start: 0 })}>View</button>
-            <button className="btn btn-sm btn-primary" onClick={() => muts.addUncovered.mutate()} disabled={muts.addUncovered.isPending}>Add to map</button>
-            <button className="btn btn-sm btn-ghost" onClick={() => setHideCoverage(true)}>Dismiss</button>
-          </div>
-        )}
-        {aiError && (
-          <div className="banner banner-error">
-            <span>{aiError}</span>
-            <span className="spacer" />
-            <button className="btn btn-sm btn-ghost" onClick={() => setAiError("")}>Dismiss</button>
-          </div>
-        )}
-        {muts.structure.isError && (
-          <div className="banner banner-error"><span>Couldn't save that change: {errorMessage(muts.structure.error)}. The map was reloaded.</span></div>
-        )}
-      </div>
+      <ScreenHeader
+        right={
+          <>
+            {(muts.structure.isPending || muts.suggest.isPending) && <span className="small muted">{muts.suggest.isPending ? "Asking the model…" : "Saving…"}</span>}
+            <span className="hint">G generate · N note</span>
+            <button className="btn btn-sm" aria-label="More actions" onClick={(e) => setMoreMenu({ x: e.clientX - 200, y: e.clientY + 12 })}>⋯</button>
+          </>
+        }
+      >
+        <Link to={`/course/${courseId}`} className="back-link">← {course.data?.course.name ?? "Course"}</Link>
+        <span className="lecture-title">{l?.title ?? "…"}</span>
+        <div className="seg-tabs" role="tablist" aria-label="Lecture view">
+          {(["map", "sources", "notes"] as View[]).map((v) => (
+            <button key={v} role="tab" aria-selected={view === v} onClick={() => setView(v)}>
+              {v === "map" ? "Map" : v === "sources" ? "Sources" : "Notes"}
+            </button>
+          ))}
+        </div>
+      </ScreenHeader>
 
       <div className="lecture-body">
-        <div className={focus ? "map-area hidden" : "map-area"} aria-hidden={focus}>
-          {doc && (
-            <MapView
-              doc={doc}
-              keptCounts={counts.data}
-              editable
-              selectedId={selected}
-              onSelect={setSelected}
-              onStructure={(tree) => muts.structure.mutate(tree)}
-              onContextMenu={(id, x, y) => setMenu({ id, x, y })}
-              confirmDelete={confirmDelete}
-              onReady={(inst) => (me.current = inst)}
-            />
-          )}
-          {status === "ready" && map.isError && <p className="banner banner-error">{errorMessage(map.error)}</p>}
-        </div>
-        {node && doc && (
+        {view === "map" && (
+          <div className="map-wrap">
+            <div className="map-meta">
+              <span>Click a node to open it in the side panel · double-click or F to expand</span>
+              <span className="spacer" />
+              {doc && <span className="mono">{nNodes} nodes · from {nSlides} slides</span>}
+            </div>
+            <div className="banners">
+              {(status === "queued" || status === "running") && (
+                <div className="banner">
+                  <span>Building the map from your slides. You can keep using the app.</span>
+                  <span className="spacer" />
+                  <JobProgress jobId={l?.map_job_id ?? null} fallbackText="Starting…" />
+                </div>
+              )}
+              {status === "failed" && (
+                <div className="banner banner-error">
+                  <span>Map generation failed: {l?.map_error}</span>
+                  <span className="spacer" />
+                  <button className="btn btn-sm" onClick={() => gen.mutate()}>Retry</button>
+                </div>
+              )}
+              {status === "ready" && l?.map_fallback && (
+                <div className="banner"><span>The model's map didn't pass the checks, so this is a simpler flat map. A larger map model usually does better.</span></div>
+              )}
+              {status === "ready" && l && l.uncovered_slides.length > 0 && !hideCoverage && (
+                <div className="banner">
+                  <span className="grow">
+                    Slide{l.uncovered_slides.length > 1 ? "s" : ""} {formatSlideList(l.uncovered_slides.map((s) => s.slide))}{" "}
+                    {l.uncovered_slides.length > 1 ? "aren't" : "isn't"} in the map — add {l.uncovered_slides.length > 1 ? "them" : "it"}?
+                  </span>
+                  <button className="btn btn-sm" onClick={() => setPreview({ refs: l.uncovered_slides, start: 0 })}>View</button>
+                  <button className="btn btn-sm btn-primary" onClick={() => muts.addUncovered.mutate()} disabled={muts.addUncovered.isPending}>Add to map</button>
+                  <button className="link-muted" onClick={() => setHideCoverage(true)}>Dismiss</button>
+                </div>
+              )}
+              {aiError && (
+                <div className="banner banner-error">
+                  <span className="grow">{aiError}</span>
+                  <button className="link-muted" onClick={() => setAiError("")}>Dismiss</button>
+                </div>
+              )}
+              {muts.structure.isError && (
+                <div className="banner banner-error"><span>Couldn't save that change: {errorMessage(muts.structure.error)}. The map was reloaded.</span></div>
+              )}
+            </div>
+            <div className="map-frame" aria-hidden={focus}>
+              {doc && (
+                <MapView
+                  doc={doc}
+                  keptCounts={counts.data}
+                  editable
+                  selectedId={selected}
+                  onSelect={setSelected}
+                  onOpen={openFocus}
+                  onStructure={(tree) => muts.structure.mutate(tree)}
+                  onContextMenu={(id, x, y) => setMenu({ id, x, y })}
+                  confirmDelete={confirmDelete}
+                  onReady={(inst) => (me.current = inst)}
+                />
+              )}
+              {status === "ready" && map.isError && <p className="banner banner-error">{errorMessage(map.error)}</p>}
+            </div>
+            <div className="map-hints">
+              <span>Right-click a node: Expand · Split · Merge · Simplify</span>
+              <span>Drag to rearrange</span>
+              <span>Tab child · Enter sibling · F2 rename</span>
+            </div>
+          </div>
+        )}
+        {view === "sources" && l && <LectureSourcesView courseId={courseId} lecture={l} onPreview={(refs, start) => setPreview({ refs, start })} />}
+        {view === "notes" && doc && <LectureNotesView courseId={courseId} lectureId={lectureId} doc={doc} />}
+
+        {node && doc ? (
           <SidePanel
             courseId={courseId}
             lectureId={lectureId}
@@ -233,10 +260,8 @@ export function LectureScreen() {
             nodeId={node.id}
             focus={focus}
             onToggleFocus={toggleFocus}
-            onClose={() => { setFocus(false); setSelected(null); }}
             onPreview={(refs, start) => setPreview({ refs, start })}
             onStatus={(st) => muts.patchNode.mutate({ id: node.id, status: st })}
-            onMore={(x, y) => setMenu({ id: node.id, x, y })}
             draft={drafts[node.id] ?? ""}
             setDraft={(t) => setDrafts((d) => ({ ...d, [node.id]: t }))}
             keptCount={counts.data?.[node.id] ?? 0}
@@ -244,39 +269,30 @@ export function LectureScreen() {
             notesTab={<NotesTab courseId={courseId} lectureId={lectureId} nodeId={node.id} />}
             practiceTab={<PracticeTab courseId={courseId} lectureId={lectureId} nodeId={node.id} />}
           />
+        ) : (
+          doc && <LectureSummary doc={doc} uncovered={l?.uncovered_slides.length ?? 0} onShowUncovered={() => l && setPreview({ refs: l.uncovered_slides, start: 0 })} />
         )}
       </div>
 
-      {menu && doc && doc.nodes[menu.id] && (
-        <ContextMenu x={menu.x} y={menu.y} items={menuItems(menu.id, doc)} onClose={() => setMenu(null)} />
-      )}
+      {menu && doc && doc.nodes[menu.id] && <ContextMenu x={menu.x} y={menu.y} items={menuItems(menu.id, doc)} onClose={() => setMenu(null)} />}
+      {moreMenu && <ContextMenu x={moreMenu.x} y={moreMenu.y} items={moreItems} onClose={() => setMoreMenu(null)} />}
       {proposal && doc && (
         <ProposalDialog
           proposal={proposal}
-          currentLabel={doc.nodes[proposal.node_id]?.label ?? ""}
-          siblingLabel={proposal.sibling_id ? doc.nodes[proposal.sibling_id]?.label : undefined}
+          doc={doc}
           applying={muts.apply.isPending}
           onClose={() => setProposal(null)}
           onApply={(p) =>
             muts.apply.mutate(p, {
               onSuccess: () => setProposal(null),
-              onError: (e) => {
-                setProposal(null);
-                setAiError(errorMessage(e));
-              },
+              onError: (e) => { setProposal(null); setAiError(errorMessage(e)); },
             })
           }
         />
       )}
       {testMe && doc?.nodes[testMe] && (
-        <TestMe
-          courseId={courseId}
-          lectureId={lectureId}
-          nodeId={testMe}
-          nodeLabel={doc.nodes[testMe]!.label}
-          onClose={() => setTestMe(null)}
-          onPreview={(refs, start) => setPreview({ refs, start })}
-        />
+        <TestMe courseId={courseId} lectureId={lectureId} nodeId={testMe} nodeLabel={doc.nodes[testMe]!.label}
+          onClose={() => setTestMe(null)} onPreview={(refs, start) => setPreview({ refs, start })} />
       )}
       {preview && <SlidePreview courseId={courseId} refs={preview.refs} start={preview.start} onClose={() => setPreview(null)} />}
     </div>

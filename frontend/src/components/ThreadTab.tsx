@@ -25,24 +25,31 @@ interface Live {
   error: string;
 }
 
-const KIND_LABEL: Partial<Record<MessageKind, string>> = {
-  try_first: "Your turn first",
-  hint: "Hint",
-  attempt: "Your attempt",
-};
-
 function userTurns(ex: Exchange): number {
   return ex.messages.filter((m) => m.role === "user").length;
 }
+
+function daysLeft(ex: Exchange): number {
+  if (!ex.expires_at) return 7;
+  return Math.max(0, Math.ceil((new Date(ex.expires_at).getTime() - Date.now()) / 86_400_000));
+}
+
+const PIN = (
+  <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+    <path d="M10.5 1.5l4 4-2.2.8-2.6 2.6.3 3.1-1.5 1.5-2.6-2.6L2.5 14.3l-.8-.8 3.4-3.4L2.5 7.5 4 6l3.1.3 2.6-2.6z" fill="currentColor" />
+  </svg>
+);
 
 export function ThreadTab({ courseId, lectureId, nodeId, nodeLabel, draft, setDraft }: Props) {
   const thread = useThread(courseId, lectureId, nodeId);
   const muts = useThreadMutations(courseId, lectureId, nodeId);
   const [tryFirst, setTryFirst] = useState(true);
   const [hintOnly, setHintOnly] = useState(false);
-  const [active, setActive] = useState<string | null>(null); // exchange being continued
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [active, setActive] = useState<string | null>(null);
   const [live, setLive] = useState<Live | null>(null);
   const [undo, setUndo] = useState<{ id: string; timer: number } | null>(null);
+  const [declined, setDeclined] = useState<Set<string>>(new Set());
   const [flash, setFlash] = useState("");
   const abort = useRef<AbortController | null>(null);
   const lastReq = useRef<{ action: Action; exchangeId: string | null; content: string } | null>(null);
@@ -55,11 +62,16 @@ export function ThreadTab({ courseId, lectureId, nodeId, nodeLabel, draft, setDr
   }, [nodeId]);
   useEffect(() => () => { if (undo) window.clearTimeout(undo.timer); }, [undo]);
 
-  const all = [...(thread.data?.kept ?? []), ...(thread.data?.recent ?? [])];
+  const kept = thread.data?.kept ?? [];
+  const recent = thread.data?.recent ?? [];
+  const all = [...kept, ...recent];
   const activeEx = all.find((e) => e.id === active) ?? null;
   const awaitingAttempt = activeEx?.messages.at(-1)?.kind === "try_first" || live?.kind === "try_first";
   const mode: Mode = hintOnly ? "hint" : tryFirst ? "try_first" : "normal";
   const streaming = live !== null && !live.error;
+  const lastAnswered = [...all].sort((a, b) => b.created_at.localeCompare(a.created_at))
+    .find((e) => e.messages.at(-1)?.kind === "answer");
+  const moreTarget = activeEx && activeEx.messages.at(-1)?.kind === "answer" ? activeEx : lastAnswered;
 
   const send = async (action: Action, exchangeId: string | null, content = draft) => {
     if (streaming) return;
@@ -94,61 +106,6 @@ export function ThreadTab({ courseId, lectureId, nodeId, nodeLabel, draft, setDr
     }
   };
 
-  const doUnkeep = (id: string) => {
-    muts.unkeep.mutate(id);
-    if (undo) window.clearTimeout(undo.timer);
-    const timer = window.setTimeout(() => setUndo(null), 5000);
-    setUndo({ id, timer });
-  };
-
-  const note = (text: string) => {
-    setFlash(text);
-    window.setTimeout(() => setFlash(""), 2500);
-  };
-
-  const renderExchange = (ex: Exchange, kept: boolean) => {
-    const isLive = live && live.exchangeId === ex.id;
-    const last = ex.messages.at(-1);
-    return (
-      <article key={ex.id} className={kept ? "exchange kept" : "exchange recent"} aria-label={kept ? "Kept question" : "Recent doubt"}>
-        {ex.messages.map((m, i) => <Bubble key={i} m={m} />)}
-        {isLive && live.user && <Bubble m={live.user} />}
-        {isLive && <Bubble m={{ role: "assistant", kind: live.kind, content: live.text || "…" }} />}
-        {isLive && live.error && <ErrorRow error={live.error} onRetry={retry} onDismiss={() => setLive(null)} />}
-        {!isLive && (
-          <div className="exchange-actions row wrap">
-            {kept ? (
-              <>
-                <button className="btn btn-ghost btn-sm" onClick={() => doUnkeep(ex.id)}>Un-keep</button>
-                <button className="btn btn-ghost btn-sm" onClick={() => muts.toCard.mutate(ex.id, { onSuccess: () => note("Flashcard added to Practice.") })}>Make flashcard</button>
-                <button className="btn btn-ghost btn-sm" onClick={() => muts.toNote.mutate(ex.id, { onSuccess: () => note("Pinned as a note.") })}>Pin as note</button>
-                <button className="btn btn-ghost btn-sm" onClick={() => muts.toNode.mutate(ex.id, { onSuccess: () => note("Added as a child node.") })}>Add as child node</button>
-              </>
-            ) : (
-              <button className="btn btn-sm" onClick={() => muts.keep.mutate(ex.id)}>Keep</button>
-            )}
-            {last?.role === "assistant" && last.kind === "answer" && (
-              <details className="more-help">
-                <summary className="btn btn-ghost btn-sm">More help ▾</summary>
-                <div className="row">
-                  <button className="btn btn-sm" onClick={() => void send("why", ex.id, "")}>Explain why</button>
-                  <button className="btn btn-sm" onClick={() => void send("example", ex.id, "")}>Give example</button>
-                </div>
-              </details>
-            )}
-            {active !== ex.id && last?.kind !== "try_first" && (
-              <button className="btn btn-ghost btn-sm" onClick={() => setActive(ex.id)}>Follow up</button>
-            )}
-            {active === ex.id && <span className="small muted">Your next message continues this</span>}
-          </div>
-        )}
-        {!kept && !isLive && userTurns(ex) >= 3 && (
-          <p className="keep-nudge small">You've gone back and forth on this a few times. Keep this? It'll stay on “{nodeLabel}”.</p>
-        )}
-      </article>
-    );
-  };
-
   const retry = () => {
     const r = lastReq.current;
     const exId = live?.exchangeId ?? r?.exchangeId ?? null;
@@ -156,9 +113,62 @@ export function ThreadTab({ courseId, lectureId, nodeId, nodeLabel, draft, setDr
     if (r) window.setTimeout(() => void send(r.action, exId, r.content), 0);
   };
 
-  const kept = thread.data?.kept ?? [];
-  const recent = thread.data?.recent ?? [];
+  const unkeep = (id: string) => {
+    muts.unkeep.mutate(id);
+    if (undo) window.clearTimeout(undo.timer);
+    setUndo({ id, timer: window.setTimeout(() => setUndo(null), 5000) });
+  };
+  const note = (text: string) => {
+    setFlash(text);
+    window.setTimeout(() => setFlash(""), 1500);
+  };
+
+  const renderExchange = (ex: Exchange, isKept: boolean) => {
+    const isLive = live && live.exchangeId === ex.id;
+    const lastAnswerIdx = ex.messages.map((m) => m.kind).lastIndexOf("answer");
+    return (
+      <article key={ex.id} className={isKept ? "exchange" : "exchange recent"} aria-label={isKept ? "Kept question" : "Temporary doubt"}>
+        <button
+          className={isKept ? "pin on" : "pin"}
+          aria-pressed={isKept}
+          aria-label={isKept ? "Un-keep this question" : "Keep this question"}
+          title={isKept ? "Kept — click to un-keep" : "Keep"}
+          onClick={() => (isKept ? unkeep(ex.id) : muts.keep.mutate(ex.id))}
+        >
+          {PIN}
+        </button>
+        {ex.messages.map((m, i) => (
+          <div key={i} className="bubble-wrap">
+            <Bubble m={m} />
+            {i === lastAnswerIdx && !isLive && (
+              <div className="answer-actions">
+                <button className="btn btn-sm" onClick={() => muts.toCard.mutate(ex.id, { onSuccess: () => note("Flashcard added to Practice") })}>Make flashcard</button>
+                <button className="btn btn-sm" onClick={() => muts.toNote.mutate(ex.id, { onSuccess: () => note("Pinned as a note") })}>Pin as note</button>
+                <button className="btn btn-sm" onClick={() => muts.toNode.mutate(ex.id, { onSuccess: () => note("Added as a child node") })}>Add as child</button>
+              </div>
+            )}
+          </div>
+        ))}
+        {isLive && live.user && <Bubble m={live.user} />}
+        {isLive && <Bubble m={{ role: "assistant", kind: live.kind, content: live.text || "…" }} />}
+        {isLive && live.error && <ErrorRow error={live.error} onRetry={retry} onDismiss={() => setLive(null)} />}
+        {!isLive && active !== ex.id && ex.messages.at(-1)?.kind !== "try_first" && (
+          <button className="link-muted follow-up" onClick={() => setActive(ex.id)}>Follow up</button>
+        )}
+        {!isLive && active === ex.id && <span className="xsmall muted">Your next message continues this</span>}
+        {!isKept && !isLive && userTurns(ex) >= 3 && !declined.has(ex.id) && (
+          <div className="keep-nudge row">
+            <span className="grow">Keep this?</span>
+            <button className="btn btn-sm" onClick={() => muts.keep.mutate(ex.id)}>Keep</button>
+            <button className="btn btn-ghost btn-sm" onClick={() => setDeclined(new Set(declined).add(ex.id))}>No</button>
+          </div>
+        )}
+      </article>
+    );
+  };
+
   const newLive = live && !all.some((e) => e.id === live.exchangeId);
+  const days = recent.length ? Math.max(...recent.map(daysLeft)) : 7;
 
   return (
     <div className="thread">
@@ -168,7 +178,7 @@ export function ThreadTab({ courseId, lectureId, nodeId, nodeLabel, draft, setDr
           <p className="muted small">Ask anything about this topic. Answers come only from your slides.</p>
         )}
         {kept.map((ex) => renderExchange(ex, true))}
-        {recent.length > 0 && <h3 className="small muted recent-head">Recent doubts · gone after 7 days unless kept</h3>}
+        {recent.length > 0 && <h3 className="recent-head xsmall">Temporary · clears in {days} day{days === 1 ? "" : "s"}</h3>}
         {recent.map((ex) => renderExchange(ex, false))}
         {newLive && (
           <article className="exchange recent">
@@ -189,41 +199,47 @@ export function ThreadTab({ courseId, lectureId, nodeId, nodeLabel, draft, setDr
       {flash && <div className="toast" role="status">{flash}</div>}
 
       <form
-        className="ask-box"
+        className="composer"
         onSubmit={(e) => {
           e.preventDefault();
           if (awaitingAttempt && active) void send("attempt", active);
           else void send("ask", active);
         }}
       >
-        <label className="visually-hidden" htmlFor="ask-input">{awaitingAttempt ? "Your attempt" : "Ask about this topic"}</label>
-        <textarea
-          id="ask-input"
-          className="textarea"
-          value={draft}
-          rows={3}
-          placeholder={awaitingAttempt ? "What do you think? Give it a try…" : `Ask about “${nodeLabel}”…`}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              e.currentTarget.form?.requestSubmit();
-            }
-          }}
-        />
-        <div className="row wrap">
-          <label className="row small">
-            <input type="checkbox" checked={tryFirst} disabled={hintOnly} onChange={(e) => setTryFirst(e.target.checked)} /> Try first
-          </label>
-          <label className="row small">
-            <input type="checkbox" checked={hintOnly} onChange={(e) => setHintOnly(e.target.checked)} /> Hint only
-          </label>
-          {active && (
-            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setActive(null)}>New question</button>
-          )}
-          <span className="spacer" />
-          <button type="submit" className="btn btn-primary btn-sm" disabled={streaming || !draft.trim()}>
-            {awaitingAttempt ? "Send attempt" : "Ask"}
+        <div className="composer-chips row wrap">
+          <button type="button" className="chip" aria-pressed={tryFirst && !hintOnly} disabled={hintOnly} onClick={() => setTryFirst(!tryFirst)}>
+            Try first: {tryFirst && !hintOnly ? "on" : "off"}
+          </button>
+          <button type="button" className="chip" aria-pressed={hintOnly} onClick={() => setHintOnly(!hintOnly)}>Hint only</button>
+          <div className="more-wrap">
+            <button type="button" className="chip" aria-expanded={moreOpen} disabled={!moreTarget || streaming} onClick={() => setMoreOpen(!moreOpen)}>More help ▾</button>
+            {moreOpen && moreTarget && (
+              <div className="more-menu" role="menu">
+                <button type="button" role="menuitem" className="ctx-item" onClick={() => { setMoreOpen(false); void send("why", moreTarget.id, ""); }}>Explain why</button>
+                <button type="button" role="menuitem" className="ctx-item" onClick={() => { setMoreOpen(false); void send("example", moreTarget.id, ""); }}>Give example</button>
+              </div>
+            )}
+          </div>
+          {active && <button type="button" className="link-muted" onClick={() => setActive(null)}>New question</button>}
+        </div>
+        <div className="composer-input row">
+          <label className="visually-hidden" htmlFor="ask-input">{awaitingAttempt ? "Your attempt" : "Ask about this topic"}</label>
+          <textarea
+            id="ask-input"
+            className="input composer-text"
+            value={draft}
+            rows={1}
+            placeholder={awaitingAttempt ? "What do you think? Give it a try…" : `Ask about ${nodeLabel}…`}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                e.currentTarget.form?.requestSubmit();
+              }
+            }}
+          />
+          <button type="submit" className="btn btn-primary" disabled={streaming || !draft.trim()}>
+            {awaitingAttempt ? "Send" : "Ask"}
           </button>
         </div>
       </form>
@@ -232,10 +248,11 @@ export function ThreadTab({ courseId, lectureId, nodeId, nodeLabel, draft, setDr
 }
 
 function Bubble({ m }: { m: Message }) {
-  const label = KIND_LABEL[m.kind];
+  const cls = m.role === "user" ? "bubble user" : m.kind === "try_first" ? "bubble ai try" : m.kind === "hint" ? "bubble ai hint" : "bubble ai";
   return (
-    <div className={`bubble bubble-${m.role} kind-${m.kind}`}>
-      {label && <span className="bubble-kind small muted">{label}</span>}
+    <div className={cls}>
+      {m.kind === "try_first" && <span className="bubble-label">Try first</span>}
+      {m.kind === "hint" && <span className="bubble-label">Hint</span>}
       <p className="bubble-text">{m.content}</p>
     </div>
   );

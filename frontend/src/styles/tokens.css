@@ -1,24 +1,31 @@
-/* Design tokens (SPEC §6). All colours in the app come from here. */
+/* Design tokens — UI.md §1. Every colour in the app comes from here. */
 :root {
   --ground: #f4f5f7;
   --surface: #ffffff;
-  --surface-2: #f9fafb;
+  --surface-2: #f7f8fa;
   --border: #e3e6eb;
-  --border-strong: #c9ced6;
+  --border-strong: #d5d9e0;
   --text: #16181d;
+  --text-2: #3e4450;
   --muted: #5b616e;
   --accent: #2f4fc9;
-  --accent-text: #ffffff;
-  --accent-soft: #e8ecfa;
-  --danger: #b42318;
-  --danger-soft: #fdecea;
-  --focus-ring: #2f4fc9;
-  --overlay: rgba(22, 24, 29, 0.35);
-
-  --status-got-it: #0f766e;
+  --accent-soft: #eef1fc;
+  --accent-border: #b8c3ee;
+  --on-accent: #ffffff;
+  --ink: #16181d;
+  --on-ink: #ffffff;
+  --line: #c9ced8;
+  --status-got: #0f766e;
+  --status-got-soft: #e7f5f3;
   --status-revising: #fbbf24;
+  --status-revising-soft: #fef6e0;
+  --status-revising-text: #854d0e;
   --status-confused: #ea580c;
-  --status-not-started: #8a909c;
+  --status-confused-soft: #fff1e8;
+  --status-confused-text: #9a3412;
+  --overlay: rgba(22, 24, 29, 0.35);
+  --popover-shadow: 0 8px 28px rgba(22, 24, 29, 0.12);
+  --dot-grid: #e3e6eb;
 
   --tag-1: #2f4fc9;
   --tag-2: #0f766e;
@@ -30,49 +37,59 @@
   --font-sans: "IBM Plex Sans", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 
-  --radius: 8px;
-  --radius-sm: 6px;
+  --r-btn: 8px;
+  --r-card: 12px;
+  --r-card-lg: 14px;
+  --r-chip: 6px;
+  --r-pill: 16px;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
   --space-4: 16px;
-  --space-5: 24px;
-  --space-6: 32px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
   --sidebar-w: 240px;
   --panel-w: 420px;
   --target: 44px;
-  --transition: 150ms ease;
-  --shadow: 0 1px 2px rgba(22, 24, 29, 0.06), 0 4px 16px rgba(22, 24, 29, 0.06);
+  --ease: 180ms ease-out;
   color-scheme: light;
 }
-
 
 :root[data-theme="dark"] {
   --ground: #15171c;
   --surface: #1d2027;
-  --surface-2: #22262e;
+  --surface-2: #252932;
   --border: #2e333d;
-  --border-strong: #3d4350;
+  --border-strong: #3a404c;
   --text: #e8eaee;
-  --muted: #a0a6b2;
-  --accent: #7d95ee;
-  --accent-text: #15171c;
-  --accent-soft: #252c45;
-  --danger: #f28b82;
-  --danger-soft: #3a2422;
-  --focus-ring: #7d95ee;
-  --overlay: rgba(0, 0, 0, 0.5);
-  --status-got-it: #2dd4bf;
+  --text-2: #b9bec8;
+  --muted: #8e95a2;
+  --accent: #6e8bff;
+  --accent-soft: #232b4a;
+  --accent-border: #3d4b80;
+  --on-accent: #15171c;
+  --ink: #e8eaee;
+  --on-ink: #15171c;
+  --line: #4a505c;
+  --status-got: #2bb3a6;
+  --status-got-soft: #16302e;
   --status-revising: #fbbf24;
-  --status-confused: #fb923c;
-  --status-not-started: #8a909c;
-  --tag-1: #7d95ee;
-  --tag-2: #2dd4bf;
-  --tag-3: #fb923c;
+  --status-revising-soft: #352c14;
+  --status-revising-text: #fcd679;
+  --status-confused: #fb7a3c;
+  --status-confused-soft: #3a2418;
+  --status-confused-text: #fdba8c;
+  --overlay: rgba(0, 0, 0, 0.5);
+  --popover-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+  --dot-grid: #2e333d;
+  --tag-1: #6e8bff;
+  --tag-2: #2bb3a6;
+  --tag-3: #fb7a3c;
   --tag-4: #a78bfa;
   --tag-5: #f472b6;
-  --tag-6: #a0a6b2;
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.25);
+  --tag-6: #8e95a2;
   color-scheme: dark;
 }
 
@@ -80,29 +97,36 @@
   :root:not([data-theme="light"]):not([data-theme="dark"]) {
     --ground: #15171c;
     --surface: #1d2027;
-    --surface-2: #22262e;
+    --surface-2: #252932;
     --border: #2e333d;
-    --border-strong: #3d4350;
+    --border-strong: #3a404c;
     --text: #e8eaee;
-    --muted: #a0a6b2;
-    --accent: #7d95ee;
-    --accent-text: #15171c;
-    --accent-soft: #252c45;
-    --danger: #f28b82;
-    --danger-soft: #3a2422;
-    --focus-ring: #7d95ee;
-    --overlay: rgba(0, 0, 0, 0.5);
-    --status-got-it: #2dd4bf;
+    --text-2: #b9bec8;
+    --muted: #8e95a2;
+    --accent: #6e8bff;
+    --accent-soft: #232b4a;
+    --accent-border: #3d4b80;
+    --on-accent: #15171c;
+    --ink: #e8eaee;
+    --on-ink: #15171c;
+    --line: #4a505c;
+    --status-got: #2bb3a6;
+    --status-got-soft: #16302e;
     --status-revising: #fbbf24;
-    --status-confused: #fb923c;
-    --status-not-started: #8a909c;
-    --tag-1: #7d95ee;
-    --tag-2: #2dd4bf;
-    --tag-3: #fb923c;
+    --status-revising-soft: #352c14;
+    --status-revising-text: #fcd679;
+    --status-confused: #fb7a3c;
+    --status-confused-soft: #3a2418;
+    --status-confused-text: #fdba8c;
+    --overlay: rgba(0, 0, 0, 0.5);
+    --popover-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+    --dot-grid: #2e333d;
+    --tag-1: #6e8bff;
+    --tag-2: #2bb3a6;
+    --tag-3: #fb7a3c;
     --tag-4: #a78bfa;
     --tag-5: #f472b6;
-    --tag-6: #a0a6b2;
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.25);
+    --tag-6: #8e95a2;
     color-scheme: dark;
   }
 }

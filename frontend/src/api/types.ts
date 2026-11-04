@@ -37,9 +37,18 @@ export interface Lecture {
   created_at: string;
 }
 
+export interface StatusCounts {
+  got_it: number;
+  revising: number;
+  confused: number;
+  not_started: number;
+  total: number;
+}
+
 export interface CourseDetail {
   course: Course;
   lectures: Lecture[];
+  progress: Record<string, StatusCounts>;
 }
 
 export interface PomodoroPreset {

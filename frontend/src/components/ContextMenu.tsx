@@ -7,6 +7,7 @@ export interface MenuItem {
   hint?: string;
   submenu?: MenuItem[];
   separator?: boolean;
+  danger?: boolean;
 }
 
 interface Props {
@@ -67,7 +68,7 @@ function Item({ it, onClose }: { it: MenuItem; onClose: () => void }): ReactNode
   return (
     <button
       role="menuitem"
-      className="ctx-item"
+      className={it.danger ? "ctx-item danger" : "ctx-item"}
       disabled={it.disabled}
       onClick={() => {
         onClose();
@@ -75,7 +76,7 @@ function Item({ it, onClose }: { it: MenuItem; onClose: () => void }): ReactNode
       }}
     >
       <span>{it.label}</span>
-      {it.hint && <span className="kbd">{it.hint}</span>}
+      {it.hint && <span className="hint">{it.hint}</span>}
     </button>
   );
 }

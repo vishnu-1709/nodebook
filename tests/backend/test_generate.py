@@ -95,3 +95,17 @@ def test_check_answer_and_validation(client: TestClient, ctx) -> None:  # noqa: 
     assert client.post(base, json={"type": "questions"}).status_code == 400
     dests = client.get(f"{base}/destinations").json()
     assert dests[0]["label"].startswith("Course") and len(dests) > 5
+
+
+def test_course_saved_view_and_progress(client: TestClient, ctx) -> None:  # noqa: ANN001
+    cid, lid, m, base = setup(client, ctx)
+    nid = find(to_tree(m), "Ridge regression")["id"]
+    it = client.post(base, json={"type": "questions", "lecture_ids": [lid]}).json()
+    client.post(f"{base}/save", json={"item": it, "destination": {"course_id": cid, "lecture_id": lid, "node_id": nid, "label": "x"}})
+    client.post(f"/api/courses/{cid}/notes", json={"text": "course note"})
+    saved = client.get(f"/api/courses/{cid}/saved").json()
+    assert saved["practice"][0]["node_label"] == "Ridge regression"
+    assert saved["notes"][0]["note"]["text"] == "course note"
+    detail = client.get(f"/api/courses/{cid}").json()
+    p = detail["progress"][lid]
+    assert p["total"] == len(m["nodes"]) - 1 and p["not_started"] == p["total"]

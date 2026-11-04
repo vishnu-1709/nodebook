@@ -8,6 +8,7 @@ import "./styles/tokens.css";
 import "./styles/base.css";
 import "./styles/shell.css";
 import "./styles/map.css";
+import "./styles/panel.css";
 
 applyTheme(initialTheme());
 

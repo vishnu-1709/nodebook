@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { errorMessage } from "../api/client";
 import { useDestinations, useInbox, useInboxMutations, type InboxItem, type NoteDestination } from "../api/notes";
 import { useUi } from "../app/store";
+import { PageHead } from "../components/PageHead";
 
 export function InboxScreen() {
   const inbox = useInbox();
@@ -18,7 +19,7 @@ export function InboxScreen() {
 
   return (
     <div className="content content-narrow">
-      <div className="page-head"><h1>Notes inbox</h1></div>
+      <PageHead title="Notes inbox" />
       {inbox.data?.length === 0 && <p className="muted">Nothing to sort. Quick notes taken outside a course land here.</p>}
       <ul className="note-list">
         {inbox.data?.map((it) => <InboxRow key={it.id} item={it} suggesting={m.suggest.isPending && m.suggest.variables === it.id} />)}

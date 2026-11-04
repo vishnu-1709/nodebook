@@ -26,7 +26,7 @@ export const useUi = create<UiState>((set) => ({
   showToast: (toast) => {
     window.clearTimeout(toastTimer);
     set({ toast });
-    toastTimer = window.setTimeout(() => set({ toast: "" }), 2500);
+    toastTimer = window.setTimeout(() => set({ toast: "" }), 1500);
   },
   overlay: "none",
   open: (overlay) => set({ overlay }),

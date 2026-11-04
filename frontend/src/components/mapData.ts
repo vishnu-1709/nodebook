@@ -14,10 +14,8 @@ export function toMindElixir(doc: MapDoc, keptCounts: Record<string, number> = {
     if (!n) throw new Error(`map node ${id} missing`);
     seen.add(id);
     const tags: { text: string; className: string }[] = [
-      {
-        text: n.status === "not_started" ? "" : STATUS_LABEL[n.status],
-        className: `me-status status-${n.status}`,
-      },
+      // dot only inside the node; the text label lives in the side panel (UI.md §3.2)
+      { text: STATUS_LABEL[n.status], className: `me-status status-${n.status}` },
     ];
     const kept = keptCounts[id] ?? 0;
     if (kept > 0) tags.push({ text: String(kept), className: "me-badge" });

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { errorMessage } from "../api/client";
 import { useDeleteSource, usePatchSource, useSources, useUploadSource } from "../api/lectures";
-import { SOURCE_KIND_LABEL, type SourceKind } from "../api/types";
+import { SOURCE_KIND_LABEL, type Lecture, type SourceKind } from "../api/types";
 import { DropZone } from "./DropZone";
 
 function guessKind(name: string): SourceKind {
@@ -17,7 +17,7 @@ function fmtSize(bytes: number): string {
   return `${Math.max(1, Math.round(bytes / 1024))} KB`;
 }
 
-export function SourcesShelf({ courseId }: { courseId: string }) {
+export function SourcesShelf({ courseId, lectures = [] }: { courseId: string; lectures?: Lecture[] }) {
   const sources = useSources(courseId);
   const upload = useUploadSource(courseId);
   const patch = usePatchSource(courseId);
@@ -33,13 +33,14 @@ export function SourcesShelf({ courseId }: { courseId: string }) {
 
   return (
     <section className="stack">
-      <h2>Sources</h2>
+      <div className="card-head"><h2 className="grow">Sources</h2></div>
       <p className="muted small">Every file for this course: slides, past papers, notes, textbook chapters.</p>
       <ul className="list">
         {sources.data?.map((s) => (
           <li key={s.id} className="list-row">
+            <span className="file-type mono" aria-hidden="true">{s.ext.toUpperCase()}</span>
             <span className="grow truncate" title={s.filename}>{s.filename}</span>
-            <span className="muted small mono">{fmtSize(s.size)}{s.slide_count ? ` · ${s.slide_count} p` : ""}</span>
+            <span className="muted small mono">{s.slide_count ? `${s.slide_count} p · ` : ""}{fmtSize(s.size)}</span>
             <label className="visually-hidden" htmlFor={`kind-${s.id}`}>Kind of file</label>
             <select
               id={`kind-${s.id}`}
@@ -52,7 +53,7 @@ export function SourcesShelf({ courseId }: { courseId: string }) {
               ))}
             </select>
             {s.lecture_id ? (
-              <span className="small muted">in a lecture</span>
+              <span className="small muted truncate used-in">used in {lectures.find((l) => l.id === s.lecture_id)?.title ?? "a lecture"}</span>
             ) : (
               <button
                 className="btn btn-ghost btn-sm"
@@ -64,7 +65,7 @@ export function SourcesShelf({ courseId }: { courseId: string }) {
           </li>
         ))}
       </ul>
-      <DropZone accept=".pdf,.pptx,.txt,.md" onFiles={onFiles} label="Add files" disabled={upload.isPending}>
+      <DropZone accept=".pdf,.pptx,.txt,.md" onFiles={onFiles} label="+ Upload" disabled={upload.isPending}>
         <span className="muted small">Drop PDFs, PPTX, TXT or MD here</span>
       </DropZone>
       {err && <p className="banner banner-error">{err}</p>}

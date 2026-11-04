@@ -93,3 +93,20 @@ def test_inbox_suggest_and_file(client: TestClient, ctx) -> None:  # noqa: ANN00
     # manual "Change": destinations list includes course, lecture, nodes
     dests = client.get("/api/inbox/destinations").json()
     assert dests[0]["lecture_id"] is None and any(d["node_id"] == nid for d in dests)
+
+
+def test_partial_grade_not_saved(client: TestClient, ctx) -> None:  # noqa: ANN001
+    cid, lid, nid, m, base = setup(client, ctx)
+    qs = client.post(f"{base}/test-me").json()["questions"]
+    item = {"question": qs[0]["question"], "answer": "something here ok", "source": qs[0]["source"]}
+    client.post(f"{base}/test-me/grade", json={"items": [item], "save": False})
+    assert client.get(f"{base}/history").json() == []
+
+
+def test_save_finished_test(client: TestClient, ctx) -> None:  # noqa: ANN001
+    cid, lid, nid, m, base = setup(client, ctx)
+    res = [{"question": "q", "answer": "a", "verdict": "correct", "feedback": "ok", "source": None},
+           {"question": "q2", "answer": "", "verdict": "wrong", "feedback": "x", "source": None}]
+    rec = client.post(f"{base}/test-me/save", json={"results": res}).json()
+    assert rec["score"] == 0.5
+    assert [h["id"] for h in client.get(f"{base}/history").json()] == [rec["id"]]

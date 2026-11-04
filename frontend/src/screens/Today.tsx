@@ -1,5 +1,6 @@
 import { useCourses } from "../api/hooks";
 import { useUi } from "../app/store";
+import { PageHead } from "../components/PageHead";
 
 function todayLabel(): string {
   return new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
@@ -11,12 +12,16 @@ export function Today() {
   const empty = courses.isSuccess && courses.data.length === 0;
   return (
     <div className="content content-narrow">
-      <div className="page-head">
-        <div>
-          <p className="muted small">{todayLabel()}</p>
-          <h1>Today</h1>
-        </div>
-      </div>
+      <PageHead
+        kicker={todayLabel()}
+        title="Today"
+        actions={
+          <>
+            <button className="btn" onClick={() => open("quick_note")}>+ Quick note <span className="kbd">N</span></button>
+            <button className="btn btn-primary" onClick={() => open("generate")}>Generate <span className="kbd">G</span></button>
+          </>
+        }
+      />
       {empty ? (
         <div className="card stack empty-state">
           <h2>Start with a course</h2>
@@ -25,12 +30,7 @@ export function Today() {
             <button className="btn btn-primary" onClick={() => open("new_course")}>Add your first course</button>
           </div>
         </div>
-      ) : (
-        <div className="row">
-          <button className="btn" onClick={() => open("quick_note")}>Quick note <span className="kbd">N</span></button>
-          <button className="btn" onClick={() => open("generate")}>Generate <span className="kbd">G</span></button>
-        </div>
-      )}
+      ) : null}
     </div>
   );
 }

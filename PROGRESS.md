@@ -70,6 +70,32 @@
 2. M7: Today screen + reminder quick-add (R) + reminders list
 3. M7: pomodoro (global chip, P, presets, persisted state, tab title, break screen, sessions.jsonl)
 
+## UI alignment (UI.md is the source of truth)
+- Done in branch `ui-align`: new tokens (UI.md §1), shared components (buttons incl. dark, pill chips,
+  slide chips, 3-way status control, badges, tabs, seg tabs), shell per §2 (dashed "+ New course",
+  Ollama status line, pomodoro chip slot in every header, <900 px top bar), map per §3.2 (every level
+  boxed, wrapping labels max 220 px, status dot left / kept badge right, dark root, 2 px connectors,
+  dot-grid canvas, own toolbar: fit / zoom / layout, custom fit-to-view on load + resize, hint chips,
+  right-click Expand · Split · Merge with… · Simplify · Delete, preview diff with green new nodes,
+  double-click = Focus), side panel per §3.2 (always shown; lecture summary when nothing selected;
+  bubbles, keep pin, "Temporary · clears in N days", composer chips), Focus per §3.3 (full screen,
+  Test yourself card), Test me per §3.4 (one question at a time), Generate per §3.5 (full screen,
+  two columns), Course page per §3.7 (Lectures / Sources / Saved / Notes), Settings per §3.8
+  (section list), Quick note popover per §3.9.
+- Fixed: Mind-Elixir sets inline `position: relative` on its host (broke fit); its internal
+  `.map-canvas` class clashed with ours; `diffRefresh` only exists after init (now queued).
+
+### Screen check log (light + dark screenshots in `docs/ui/screens/`)
+| Screen | Mockup | Result |
+|---|---|---|
+| Lecture map + panel | `map-side-panel.png` | ✅ boxed nodes at all levels, wrapping labels, status dots, dark root, fit to view |
+| Focus mode | `focus-mode.png` | ✅ layout, Test yourself card, composer box |
+| Generate | `generate.png` | ✅ two columns, 2×2 Make cards, 3 action buttons, AI tag |
+| Course page | (UI.md §3.7) | ✅ tabs, stacked status bars, legend |
+| Quick note | (UI.md §3.9) | ✅ popover, destination chip |
+| Today | `today.png` | ⏳ rebuilt in M7 |
+| Review session | `review-session.png` | ⏳ M9 |
+
 ## Decisions
 - **Integration branch:** the cloud harness only allows pushing to `claude/gallant-cray-mdaoqn`, so that
   branch plays the role of `main`. Milestone branches `m<N>-<name>` are local and squash-merged into it.
@@ -94,6 +120,10 @@
 - Course-level practice items (Generate "unassigned") live in `courses/<id>/practice.json`
   (not in SPEC §3 layout; same shape as lecture practice.json).
 - Generated summaries/explanations show an "AI-written · check it" tag too.
+- UI deviations (small, deliberate): map hint chips add "Tab child · Enter sibling · F2 rename"
+  (double-click opens Focus as the mockup says, so rename moved to F2); clicking the selected
+  status again clears it to "Not started" (the 3-way control has no 4th button).
+- Mockup PNGs couldn't be saved from chat; `docs/ui/README.md` lists the expected file names.
 - Derived slide data (extracted text + thumbnails) cached at `courses/<id>/derived/<source_id>/`
   (rebuildable from the source file; not in SPEC §3 layout).
 

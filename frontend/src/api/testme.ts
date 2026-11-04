@@ -35,8 +35,12 @@ export function useTestMe(c: string, l: string, n: string) {
   return {
     start: useMutation({ mutationFn: () => api<{ questions: TestQuestion[] }>(`${base(c, l, n)}/test-me`, { method: "POST" }) }),
     grade: useMutation({
-      mutationFn: (items: { question: string; answer: string; source: SlideRef | null }[]) =>
-        api<ResultRecord>(`${base(c, l, n)}/test-me/grade`, { method: "POST", json: { items } }),
+      mutationFn: ({ items, save }: { items: { question: string; answer: string; source: SlideRef | null }[]; save: boolean }) =>
+        api<ResultRecord>(`${base(c, l, n)}/test-me/grade`, { method: "POST", json: { items, save } }),
+    }),
+    save: useMutation({
+      mutationFn: (results: GradeResult[]) =>
+        api<ResultRecord>(`${base(c, l, n)}/test-me/save`, { method: "POST", json: { results } }),
       onSuccess: () => void qc.invalidateQueries({ queryKey: rk.history(c, l, n) }),
     }),
   };
