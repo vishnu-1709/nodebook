@@ -1,0 +1,73 @@
+/* Mind map — UI.md §3.2. Overrides every Mind-Elixir default that differs from the spec. */
+.map-wrap { flex: 1; display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-4) var(--space-6) var(--space-4); min-width: 0; min-height: 0; }
+.map-meta { display: flex; align-items: center; gap: var(--space-3); font-size: 13px; color: var(--muted); }
+.map-frame {
+  position: relative; flex: 1; min-height: 0; border: 1px solid var(--border); border-radius: var(--r-card);
+  background-color: var(--surface);
+  background-image: radial-gradient(var(--dot-grid) 1px, transparent 1px);
+  background-size: 20px 20px; overflow: hidden;
+}
+.map-host { position: absolute !important; inset: 0; } /* Mind-Elixir sets inline position: relative */
+.map-hints { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+.map-hints span { font-size: 13px; color: var(--text-2); padding: 4px 10px; border: 1px solid var(--border); border-radius: var(--r-chip); background: var(--surface); }
+
+.map-toolbar {
+  position: absolute; top: var(--space-3); left: var(--space-3); z-index: 5; display: flex; flex-direction: column; gap: 2px;
+  padding: 3px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-btn);
+}
+.map-toolbar button {
+  width: 32px; height: 32px; border: none; border-radius: 6px; background: transparent; color: var(--text-2); cursor: pointer;
+  font-size: 15px; display: inline-flex; align-items: center; justify-content: center;
+}
+.map-toolbar button:hover { background: var(--surface-2); color: var(--text); }
+
+/* container: transparent so the canvas dot grid shows */
+.map-host .map-container { background: transparent; font-family: var(--font-sans); color: var(--text); }
+.map-host .map-container .lines path,
+.map-host .map-container .subLines path { stroke: var(--line); stroke-width: 2px; fill: none; }
+
+/* every node is a box, at every level */
+.map-host .map-container .me-tpc {
+  display: flex; align-items: center; gap: 8px; max-width: 220px; white-space: normal; overflow-wrap: anywhere;
+  background: var(--surface); color: var(--text); border: 1px solid var(--border-strong); border-radius: 8px;
+  padding: 6px 12px; font-size: 13px; font-weight: 400; line-height: 1.35;
+  transition: background var(--ease), border-color var(--ease);
+}
+.map-host .map-container .me-tpc > .text { display: block; min-width: 0; }
+.map-host .map-container .me-main > .me-wrapper > .me-parent > .me-tpc {
+  padding: 8px 12px; font-size: 14px; font-weight: 500; border: 1px solid var(--border-strong); border-radius: 8px;
+  background: var(--surface); color: var(--text);
+}
+.map-host .map-container .me-root .me-tpc {
+  background: var(--ink); color: var(--on-ink); border: none; border-radius: 10px; padding: 12px 20px;
+  font-size: 15px; font-weight: 700; min-width: 140px; justify-content: center; text-align: center;
+}
+.map-host .map-container .me-tpc:hover { border-color: color-mix(in srgb, var(--accent) 50%, var(--border-strong)); }
+.map-host .map-container .me-tpc.selected {
+  outline: none; background: var(--accent-soft); border: 2px solid var(--accent); font-weight: 600;
+  padding: 5px 11px;
+}
+.map-host .map-container .me-main > .me-wrapper > .me-parent > .me-tpc.selected { padding: 7px 11px; border: 2px solid var(--accent); background: var(--accent-soft); }
+.map-host .map-container .me-root .me-tpc.selected { outline: 2px solid var(--accent); outline-offset: 2px; border: none; background: var(--ink); padding: 12px 20px; }
+
+/* status dot (left) and kept badge (right) come from Mind-Elixir "tags" */
+.map-host .map-container .me-tpc .tags { display: contents; }
+.map-host .map-container .me-tpc .tags span { margin: 0; padding: 0; background: none; line-height: 1; }
+.map-host .map-container .me-tpc .tags span.me-status {
+  order: -1; flex: none; width: 9px; height: 9px; border-radius: 50%; font-size: 0; color: transparent;
+}
+.map-host .map-container .me-tpc .tags span.status-got_it { background: var(--status-got); }
+.map-host .map-container .me-tpc .tags span.status-revising { background: var(--status-revising); }
+.map-host .map-container .me-tpc .tags span.status-confused { background: var(--status-confused); }
+.map-host .map-container .me-tpc .tags span.status-not_started { background: transparent; border: 1.5px solid var(--muted); }
+.map-host .map-container .me-tpc .tags span.me-badge {
+  order: 2; flex: none; font-family: var(--font-mono); font-size: 11px; line-height: 1; padding: 3px 7px; border-radius: 10px;
+  background: var(--accent); color: var(--on-accent);
+}
+
+/* expand/collapse handle + edit box + drag ghost */
+.map-host .map-container .me-parent .me-epd.minus { transition: opacity var(--ease); }
+.map-host .map-container #input-box { background: var(--surface); color: var(--text); outline: 2px solid var(--accent); border-radius: 8px; }
+.map-host .map-container .mind-elixir-ghost { background: var(--surface); border: 1px solid var(--accent); color: var(--text); border-radius: 8px; }
+.map-host .map-container .selection-area { background: var(--accent-soft); border-color: var(--accent); }
+.map-host .map-container .me-parent .me-tpc .show { background: var(--accent-soft); opacity: 1; }
