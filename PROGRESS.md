@@ -120,7 +120,7 @@
   one or all); pomodoro "Quick brain check" (`api/brain.py`): nodes opened during a focus block are
   tracked; when it ends the break is held for 3 questions from those nodes (graded, saved to each
   node's history) with the "25 min · 2 nodes · 8 cards" line, then Start break.
-- Tests: 106 pytest, 25 vitest.
+- Tests: 103 pytest, 25 vitest.
 
 ### Next 3 steps (after your feedback)
 1. Your real-deck / real-model findings from the M2 + M8 checkpoints → prompt and parser fixes
