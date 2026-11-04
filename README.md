@@ -59,7 +59,7 @@ switched off in Settings and is never sent anywhere.
 
 ## Development
 
-Requirements: Python 3.11+, Node 20+, and (for real AI) Ollama.
+Requirements: Python 3.11+, Node 22+, and (for real AI) Ollama.
 
 ```bash
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
