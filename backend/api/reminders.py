@@ -7,7 +7,10 @@ from pydantic import BaseModel, Field
 
 from backend.api.deps import get_ctx
 from backend.core import reminders as svc
+from fastapi.responses import Response
+
 from backend.core.context import AppContext
+from backend.core.ics import reminders_ics
 from backend.core.schemas import Reminder, ReminderLink, TagColour
 from backend.core.today import TodayOut, build_today
 from backend.core.usage import log_usage
@@ -91,6 +94,24 @@ def delete(reminder_id: str, ctx: AppContext = Depends(get_ctx)) -> None:
 @router.put("/reminders/tags")
 def set_tag(body: TagIn, ctx: AppContext = Depends(get_ctx)) -> list[TagColour]:
     return svc.set_tag_colour(ctx.storage, body.name.lower(), body.colour)
+
+
+@router.get("/reminders.ics")
+def all_ics(ctx: AppContext = Depends(get_ctx)) -> Response:
+    """Every open reminder as one calendar file."""
+    items = [r for r in svc.list_reminders(ctx.storage).items if not r.done]
+    return Response(reminders_ics(items), media_type="text/calendar",
+                    headers={"Content-Disposition": 'attachment; filename="nodebook-reminders.ics"'})
+
+
+@router.get("/reminders/{reminder_id}.ics")
+def one_ics(reminder_id: str, ctx: AppContext = Depends(get_ctx)) -> Response:
+    r = next((x for x in svc.list_reminders(ctx.storage).items if x.id == reminder_id), None)
+    if r is None:
+        raise HTTPException(404, "reminder not found")
+    log_usage(ctx, "reminder.ics")
+    return Response(reminders_ics([r]), media_type="text/calendar",
+                    headers={"Content-Disposition": 'attachment; filename="reminder.ics"'})
 
 
 @router.get("/today")
