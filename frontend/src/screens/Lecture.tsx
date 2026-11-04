@@ -1,20 +1,20 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { errorMessage } from "../api/client";
 import { useCourse } from "../api/hooks";
 import { lk, useGenerateMap, useLecture, useMap } from "../api/lectures";
 import { useMapMutations, type NodeAction, type Proposal } from "../api/maps";
-import { STATUS_LABEL, type MapDoc, type SlideRef, type Status } from "../api/types";
-import { useUi } from "../app/store";
+import type { MapDoc, SlideRef } from "../api/types";
+import { onShortcut, useUi } from "../app/store";
+import { useKeptCounts } from "../api/threads";
+import { SidePanel } from "../components/SidePanel";
 import { ContextMenu, type MenuItem } from "../components/ContextMenu";
 import { JobProgress } from "../components/JobProgress";
 import { MapView, type MindInstance } from "../components/MapView";
-import { formatSlideList, nodePath, siblingsOf } from "../components/mapData";
+import { formatSlideList, siblingsOf } from "../components/mapData";
 import { ProposalDialog } from "../components/ProposalDialog";
 import { SlidePreview } from "../components/SlidePreview";
-
-const STATUSES: Status[] = ["not_started", "confused", "revising", "got_it"];
 
 export function LectureScreen() {
   const { courseId = "", lectureId = "" } = useParams();
@@ -33,6 +33,40 @@ export function LectureScreen() {
   const [proposal, setProposal] = useState<Proposal | null>(null);
   const [aiError, setAiError] = useState("");
   const me = useRef<MindInstance | null>(null);
+  const [focus, setFocus] = useState(false);
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const counts = useKeptCounts(courseId, lectureId, status === "ready");
+
+  const toggleFocus = useCallback(() => {
+    setFocus((f) => {
+      if (!f && selected) muts.patchNode.mutate({ id: selected, studied: true });
+      return !f;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected]);
+
+  useEffect(
+    () =>
+      onShortcut((action) => {
+        if (action === "expand_panel" && selected) {
+          toggleFocus();
+          return true;
+        }
+        if (action === "escape") {
+          if (focus) {
+            setFocus(false);
+            return true;
+          }
+          if (selected) {
+            setSelected(null);
+            me.current?.clearSelection();
+            return true;
+          }
+        }
+        return false;
+      }),
+    [selected, focus, toggleFocus],
+  );
 
   useEffect(() => {
     setContext({ courseId, lectureId, nodeId: selected });
@@ -45,7 +79,6 @@ export function LectureScreen() {
 
   const doc = map.data;
   const node = selected && doc ? doc.nodes[selected] : undefined;
-  const path = useMemo(() => (node && doc ? nodePath(doc, node.id) : []), [node, doc]);
 
   const confirmDelete = useCallback(
     (ids: string[]) => {
@@ -172,10 +205,11 @@ export function LectureScreen() {
       </div>
 
       <div className="lecture-body">
-        <div className="map-area">
+        <div className={focus ? "map-area hidden" : "map-area"} aria-hidden={focus}>
           {doc && (
             <MapView
               doc={doc}
+              keptCounts={counts.data}
               editable
               selectedId={selected}
               onSelect={setSelected}
@@ -188,37 +222,21 @@ export function LectureScreen() {
           {status === "ready" && map.isError && <p className="banner banner-error">{errorMessage(map.error)}</p>}
         </div>
         {node && doc && (
-          <aside className="side-panel" aria-label="Node">
-            <p className="small muted">{path.slice(0, -1).join(" › ") || "Lecture"}</p>
-            <h2>{node.label}</h2>
-            <div className="row status-row" role="radiogroup" aria-label="Status">
-              {STATUSES.map((s) => (
-                <button
-                  key={s}
-                  role="radio"
-                  aria-checked={node.status === s}
-                  className={node.status === s ? "chip active" : "chip"}
-                  onClick={() => muts.patchNode.mutate({ id: node.id, status: s })}
-                >
-                  <span className={`status-dot status-${s}`} aria-hidden="true" /> {STATUS_LABEL[s]}
-                </button>
-              ))}
-            </div>
-            {node.sources.length > 0 && (
-              <div className="chips" aria-label="Source slides">
-                {node.sources.map((s, i) => (
-                  <button key={`${s.source_id}-${s.slide}`} className="chip" onClick={() => setPreview({ refs: node.sources, start: i })}>
-                    Slide {s.slide}
-                  </button>
-                ))}
-              </div>
-            )}
-            <div className="row wrap">
-              <button className="btn btn-sm" onClick={() => edit.rename(node.id)}>Rename</button>
-              <button className="btn btn-sm" onClick={() => edit.addChild(node.id)}>Add child</button>
-              <button className="btn btn-sm" onClick={(e) => setMenu({ id: node.id, x: e.clientX, y: e.clientY })}>More…</button>
-            </div>
-          </aside>
+          <SidePanel
+            courseId={courseId}
+            lectureId={lectureId}
+            doc={doc}
+            nodeId={node.id}
+            focus={focus}
+            onToggleFocus={toggleFocus}
+            onClose={() => { setFocus(false); setSelected(null); }}
+            onPreview={(refs, start) => setPreview({ refs, start })}
+            onStatus={(st) => muts.patchNode.mutate({ id: node.id, status: st })}
+            onMore={(x, y) => setMenu({ id: node.id, x, y })}
+            draft={drafts[node.id] ?? ""}
+            setDraft={(t) => setDrafts((d) => ({ ...d, [node.id]: t }))}
+            keptCount={counts.data?.[node.id] ?? 0}
+          />
         )}
       </div>
 

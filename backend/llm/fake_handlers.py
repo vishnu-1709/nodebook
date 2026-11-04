@@ -124,6 +124,26 @@ def node_simplify(messages: list[ChatMessage], schema: Any = None) -> dict[str, 
     return {"label": " ".join(label.split()[:3])}
 
 
+def node_answer(messages: list[ChatMessage], schema: Any = None) -> str:
+    system = messages[0].content if messages else ""
+    slides = [int(n) for n, _ in _SLIDE_RE.findall(system)]
+    cite = f" (slide {slides[0]})" if slides else ""
+    q = messages[-1].content if messages else ""
+    if "Do NOT answer yet" in system:
+        return f"Before I explain: what do you think? Have a look at the slides{cite} and tell me your first idea."
+    if "Give only a nudge" in system or "give one more hint" in system:
+        return f"Hint: think about what the slide{cite} says first."
+    if "has tried to answer" in system:
+        return f"Partly correct — you have the right idea.{cite} The full answer: the slides explain it step by step."
+    if "*why*" in system:
+        return f"Because the method minimises the error{cite}."
+    if "worked example" in system:
+        return f"Example: with two points the line passes through both{cite}."
+    if not slides:
+        return "The slides don't cover this."
+    return f"Here is the answer from the slides{cite}: {q[:80]}"
+
+
 def default_handlers() -> dict[str, Any]:
     return {
         "*": _echo,
@@ -133,4 +153,5 @@ def default_handlers() -> dict[str, Any]:
         "node_split": node_split,
         "node_merge": node_merge,
         "node_simplify": node_simplify,
+        "node_answer": node_answer,
     }

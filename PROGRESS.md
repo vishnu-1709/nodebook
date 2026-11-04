@@ -1,6 +1,6 @@
 # Nodebook — Progress
 
-## Current milestone: M4 — Side panel + Focus + thread
+## Current milestone: M5 — Test me + notes/inbox
 
 ### Plan (M1)
 1. Backend core: `core/paths.py` (data-folder sandbox), `core/storage.py` (atomic JSON, per-file locks,
@@ -38,12 +38,20 @@
   editing (Tab/Enter/F2/Del/drag/undo), right-click menu, status chips, delete confirm.
 - Tests: 48 pytest, 8 vitest.
 
+- M4 complete: `backend/core/threads.py` (recent.json with 7-day expiry, purge on startup, keep /
+  un-keep / delete, keep-all setting), `POST …/nodes/{id}/ask` streams SSE (start / delta / done /
+  error) with prompt `node_answer.md` modes normal / try_first / hint / attempt / why / example; context
+  = node path + source slide text + last 3 kept exchanges. From kept exchange: flashcard, pin as note,
+  add as child node. UI: `SidePanel` + `ThreadTab` (Try first default on, Hint only, More help ▾, Keep,
+  Un-keep with 5 s Undo, "Keep this?" nudge after ≥ 3 turns), Focus mode via F / Expand, Esc collapses,
+  draft per node survives; kept-count badges on map nodes; opening Focus updates last_studied_at.
+- Tests: 57 pytest, 9 vitest.
+
 ### Next 3 steps
-1. M4: threads backend (recent.json 7-day expiry, keep/unkeep, keep-all setting), node_answer prompt
-   (normal / try_first / hint, explain why / example), SSE streaming endpoint
-2. M4: SidePanel component (breadcrumb, slides, status, Test me button, tabs Thread/Notes/Practice, ask
-   box) + Focus mode (F / Esc) keeping draft + scroll
-3. M4: kept-count badges on map, "Keep this?" nudge, undo un-keep for 5 s
+1. M5: Test me — `test_me_generate` + `grade_answer` prompts, endpoints, results.jsonl, node history
+2. M5: notes — lecture/course notes CRUD, quick capture (N) to current context, inbox + `file_note`
+   suggestion, Notes tab in side panel, inbox screen with sidebar count
+3. M6: Generate panel
 
 ## Decisions
 - **Integration branch:** the cloud harness only allows pushing to `claude/gallant-cray-mdaoqn`, so that
@@ -62,6 +70,8 @@
 - New nodes created in the editor get ULIDs client-side (`frontend/src/lib/ulid.ts`).
 - "Add uncovered slides" adds one node per slide under the root, labelled by the slide title.
 - AI node actions use the study model (they're small, frequent calls).
+- Thread answers render as plain text (no Markdown library in SPEC §2).
+- Follow-ups continue the selected exchange ("Follow up"); a new question starts a new exchange.
 - Derived slide data (extracted text + thumbnails) cached at `courses/<id>/derived/<source_id>/`
   (rebuildable from the source file; not in SPEC §3 layout).
 

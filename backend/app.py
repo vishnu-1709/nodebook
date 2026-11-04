@@ -10,7 +10,7 @@ from fastapi import APIRouter, FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
-from backend.api import courses, jobs, lectures, maps, ollama, settings
+from backend.api import courses, jobs, lectures, maps, ollama, settings, threads
 from backend.core.context import AppContext
 from backend.core.courses import NotFound
 from backend.core.paths import PathError
@@ -30,6 +30,12 @@ def create_app(
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+        from backend.core.threads import purge_all_expired
+
+        try:
+            purge_all_expired(ctx.storage)
+        except Exception:  # noqa: BLE001 - never block startup on cleanup
+            pass
         yield
         ctx.jobs.shutdown()
 
@@ -60,7 +66,7 @@ def create_app(
     def health() -> dict[str, str]:
         return {"status": "ok"}
 
-    for r in (courses.router, lectures.router, maps.router, settings.router, jobs.router, ollama.router):
+    for r in (courses.router, lectures.router, maps.router, threads.router, settings.router, jobs.router, ollama.router):
         api.include_router(r)
     app.include_router(api)
 

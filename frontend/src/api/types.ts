@@ -145,3 +145,46 @@ export interface LectureCreated {
   lecture: Lecture;
   job: JobInfo;
 }
+
+export type MessageKind = "question" | "try_first" | "attempt" | "answer" | "hint";
+
+export interface Message {
+  role: "user" | "assistant";
+  kind: MessageKind;
+  content: string;
+}
+
+export interface Exchange {
+  id: string;
+  kept_at: string | null;
+  created_at: string;
+  messages: Message[];
+  node_id?: string;
+  expires_at?: string;
+}
+
+export interface NodeThread {
+  kept: Exchange[];
+  recent: Exchange[];
+}
+
+export interface PracticeItem {
+  id: string;
+  type: "card" | "question";
+  node_id: string | null;
+  front: string;
+  back: string;
+  answer_status: "ai_unverified" | "verified";
+  origin: { kind: string; source_ids: string[]; ref: string };
+  fsrs: Record<string, unknown> | null;
+  created_at: string;
+}
+
+export interface Note {
+  id: string;
+  text: string;
+  node_id: string | null;
+  pinned_from: string | null;
+  created_at: string;
+  updated_at: string;
+}
