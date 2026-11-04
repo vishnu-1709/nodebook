@@ -9,6 +9,7 @@ from backend.core.context import AppContext
 from backend.core.courses import get_lecture
 from backend.core.ids import new_id
 from backend.core.schemas import ResultRecord
+from backend.core.status import recompute
 from backend.core.usage import log_usage
 from backend.pipeline.recall import ExplainReview, NodeVerdict, RecallAnswer, judge_recall, review_explanation
 
@@ -47,6 +48,7 @@ def recall(course_id: str, lecture_id: str, body: RecallIn, ctx: AppContext = De
         st.append_jsonl(st.paths.results(course_id, lecture_id), ResultRecord(
             node_id=v.node_id, kind="recall", score=1.0 if v.correct else 0.0,
             details={"session_id": session, "typed": v.typed, "how": v.how}))
+    recompute(st, course_id, lecture_id, [v.node_id for v in verdicts])
     correct = sum(v.correct for v in verdicts)
     log_usage(ctx, "recall.blank_map")
     return RecallOut(session_id=session, verdicts=verdicts, correct=correct, total=len(verdicts),
@@ -64,5 +66,6 @@ def explain_back(course_id: str, lecture_id: str, node_id: str, body: ExplainIn,
                        details={"text": body.text, **review.model_dump(mode="json")})
     st.append_jsonl(st.paths.results(course_id, lecture_id), rec)
     map_svc.patch_node(st, course_id, lecture_id, node_id, studied=True)
+    recompute(st, course_id, lecture_id, [node_id])
     log_usage(ctx, "recall.explain_back")
     return ExplainOut(review=review, record=rec)

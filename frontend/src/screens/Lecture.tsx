@@ -63,6 +63,11 @@ export function LectureScreen() {
   const [explain, setExplain] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const counts = useKeptCounts(courseId, lectureId, status === "ready");
+  // results / ratings can change automatic statuses: refresh the map + reasons
+  const refreshStatus = useCallback(() => {
+    void qc.invalidateQueries({ queryKey: lk.map(courseId, lectureId) });
+    void qc.invalidateQueries({ queryKey: ["node-status"] });
+  }, [qc, courseId, lectureId]);
 
   const studied = useCallback((id: string) => muts.patchNode.mutate({ id, studied: true }), [muts.patchNode]);
   const [deleted, setDeleted] = useState<string[] | null>(null);
@@ -266,12 +271,13 @@ export function LectureScreen() {
             focus={focus}
             onToggleFocus={toggleFocus}
             onPreview={(refs, start) => setPreview({ refs, start })}
-            onStatus={(st) => muts.patchNode.mutate({ id: node.id, status: st })}
+            onStatus={(st) => muts.patchNode.mutate({ id: node.id, status: st }, { onSuccess: refreshStatus })}
             draft={drafts[node.id] ?? ""}
             setDraft={(t) => setDrafts((d) => ({ ...d, [node.id]: t }))}
             keptCount={counts.data?.[node.id] ?? 0}
             onTestMe={() => setTestMe(node.id)}
             onExplain={() => setExplain(node.id)}
+            onAuto={() => muts.patchNode.mutate({ id: node.id, status_mode: "auto" }, { onSuccess: refreshStatus })}
             notesTab={<NotesTab courseId={courseId} lectureId={lectureId} nodeId={node.id} />}
             practiceTab={<PracticeTab courseId={courseId} lectureId={lectureId} nodeId={node.id} />}
           />
@@ -304,11 +310,11 @@ export function LectureScreen() {
       )}
       {testMe && doc?.nodes[testMe] && (
         <TestMe courseId={courseId} lectureId={lectureId} nodeId={testMe} nodeLabel={doc.nodes[testMe]!.label}
-          onClose={() => setTestMe(null)} onPreview={(refs, start) => setPreview({ refs, start })} />
+          onClose={() => { setTestMe(null); refreshStatus(); }} onPreview={(refs, start) => setPreview({ refs, start })} />
       )}
       {explain && doc?.nodes[explain] && (
         <ExplainBack courseId={courseId} lectureId={lectureId} nodeId={explain} nodeLabel={doc.nodes[explain]!.label}
-          onClose={() => setExplain(null)} onPreview={(refs, start) => setPreview({ refs, start })} />
+          onClose={() => { setExplain(null); refreshStatus(); }} onPreview={(refs, start) => setPreview({ refs, start })} />
       )}
       {preview && <SlidePreview courseId={courseId} refs={preview.refs} start={preview.start} onClose={() => setPreview(null)} />}
     </div>

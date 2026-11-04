@@ -25,6 +25,10 @@ class Doc(Model):
     VERSION: ClassVar[int] = 1
     schema_version: int = Field(default=1, alias="schema")
 
+    def model_post_init(self, __context: Any) -> None:
+        # after migrations, a loaded doc is always at the current version
+        self.schema_version = type(self).VERSION
+
 
 # --------------------------------------------------------------------------- common
 
@@ -95,7 +99,7 @@ class Node(Model):
     children: list[str] = Field(default_factory=list)
     sources: list[SlideRef] = Field(default_factory=list)
     status: Status = "not_started"
-    status_mode: StatusMode = "manual"
+    status_mode: StatusMode = "auto"  # performance-driven once there are results (SPEC §5.14)
     last_studied_at: str | None = None
     origin: Literal["ai", "user"] = "ai"
     collapsed: bool = False
@@ -103,6 +107,7 @@ class Node(Model):
 
 class MapDoc(Doc):
     KIND: ClassVar[str] = "map"
+    VERSION: ClassVar[int] = 2  # v2: status_mode defaults to "auto" (see core/migrations.py)
     lecture_id: str
     root_id: str
     nodes: dict[str, Node] = Field(default_factory=dict)

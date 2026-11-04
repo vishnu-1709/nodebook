@@ -12,6 +12,7 @@ from backend.core.context import AppContext
 from backend.core.courses import NotFound, get_course, get_lecture
 from backend.core.notes import list_notes
 from backend.core.schemas import MapDoc, PracticeDoc, PracticeItem, PracticeOrigin
+from backend.core.status import recompute
 from backend.core.usage import log_usage
 from backend.pipeline.cards import cards_from_note, cards_from_slides
 
@@ -63,6 +64,8 @@ def counts(ctx: AppContext = Depends(get_ctx)) -> CountsOut:
 @router.post("/review/rate")
 def rate(body: RateIn, ctx: AppContext = Depends(get_ctx)) -> RateOut:
     item = svc.rate(ctx.storage, body.course_id, body.lecture_id, body.item_id, body.rating, body.duration_ms)
+    if body.lecture_id and item.node_id:
+        recompute(ctx.storage, body.course_id, body.lecture_id, [item.node_id])
     log_usage(ctx, f"review.rate.{body.rating}")
     return RateOut(item=item, remaining=len(svc.queue(ctx.storage, body.course_id)))
 

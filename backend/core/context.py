@@ -7,6 +7,7 @@ import os
 import threading
 from pathlib import Path
 
+import backend.core.migrations  # noqa: F401  (registers migrations)
 from backend.core.jobs import JobManager
 from backend.core.settings import Settings, SettingsPatch, SettingsStore
 from backend.core.storage import Storage

@@ -1,4 +1,6 @@
 import { useState, type ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "../api/client";
 import { useLectureNotes } from "../api/notes";
 import { useNodePractice } from "../api/testme";
 import type { MapDoc, SlideRef, Status } from "../api/types";
@@ -24,6 +26,7 @@ interface Props {
   onStatus: (s: Status) => void;
   onTestMe: () => void;
   onExplain: () => void;
+  onAuto: () => void;
   draft: string;
   setDraft: (s: string) => void;
   notesTab: ReactNode;
@@ -96,6 +99,7 @@ export function SidePanel(p: Props) {
           </div>
         )}
         {!p.focus && <StatusSeg value={node.status} onChange={p.onStatus} />}
+        {!p.focus && <StatusMode courseId={p.courseId} lectureId={p.lectureId} nodeId={node.id} mode={node.status_mode} onAuto={p.onAuto} />}
         {!p.focus && <button className="link-btn explain-link" onClick={p.onExplain}>Explain it back in your own words →</button>}
 
         {p.focus && (
@@ -104,7 +108,10 @@ export function SidePanel(p: Props) {
               <h1 className="focus-title">{node.label}</h1>
               <div className="chips">{chips}</div>
             </div>
-            <div className="focus-status"><StatusSeg value={node.status} onChange={p.onStatus} /></div>
+            <div className="focus-status stack-tight">
+              <StatusSeg value={node.status} onChange={p.onStatus} />
+              <StatusMode courseId={p.courseId} lectureId={p.lectureId} nodeId={node.id} mode={node.status_mode} onAuto={p.onAuto} />
+            </div>
           </div>
         )}
         {p.focus && (
@@ -140,6 +147,20 @@ export function SidePanel(p: Props) {
       </div>
     </aside>
   );
+}
+
+/** "Automatic · why" or "Set by you · Use automatic" under the status control (SPEC §5.14). */
+function StatusMode({ courseId, lectureId, nodeId, mode, onAuto }: {
+  courseId: string; lectureId: string; nodeId: string; mode: "manual" | "auto"; onAuto: () => void;
+}) {
+  const why = useQuery({
+    queryKey: ["node-status", courseId, lectureId, nodeId],
+    queryFn: () => api<{ status: Status; results: number; reason: string }>(`/courses/${courseId}/lectures/${lectureId}/nodes/${nodeId}/status`),
+  });
+  if (mode === "manual") {
+    return <p className="xsmall muted">Set by you · <button className="link-btn xsmall" onClick={onAuto}>Use automatic status</button></p>;
+  }
+  return <p className="xsmall muted">Automatic · {why.data?.reason ?? "…"}</p>;
 }
 
 /** Shown when no node is selected (UI.md §3.2). */

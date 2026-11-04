@@ -32,7 +32,7 @@ def test_upload_pdf_creates_lecture_and_map(client: TestClient, ctx, data_dir: P
     assert lec["map_status"] == "ready"
     assert any(u["slide"] == 2 for u in lec["uncovered_slides"])
     m = client.get(f"/api/courses/{cid}/lectures/{lid}/map").json()
-    assert m["schema"] == 1 and m["root_id"] in m["nodes"]
+    assert m["schema"] == 2 and m["root_id"] in m["nodes"]
     some = next(n for n in m["nodes"].values() if n["parent_id"])
     assert some["sources"][0]["source_id"] == sid
 

@@ -1,6 +1,6 @@
 # Nodebook — Progress
 
-## Current milestone: M11 — Performance-based status + course progress
+## Current milestone: M12 — Today v0.2 + .ics + pomodoro recall (v0.2)
 
 **v0.1 is feature-complete (M1–M8).** See "For the user to test locally" for the 1-week checkpoint.
 
@@ -106,11 +106,17 @@
   test card).
 - Tests: 101 pytest, 23 vitest.
 
+- M11 complete: `backend/core/status.py` — all thresholds in one place; pure `decide()` + `recompute()`
+  after Test me, recall, explain-back and review ratings; `GET …/nodes/{id}/status` explains why.
+  First post-v0.1 shape change: nodes default to `status_mode: "auto"`; **map schema 1 → 2 migration**
+  in `backend/core/migrations.py` (user-set statuses stay manual). Choosing a status = manual;
+  "Use automatic status" switches back. Course page progress overview card.
+- Tests: 105 pytest, 23 vitest.
+
 ### Next 3 steps
-1. M11: status rules in one module (`core/status.py`): auto once ≥ 3 results; got_it / confused /
-   revising rules from SPEC §5.14; manual override sets manual; recompute after each result/rating
-2. M11: course progress overview using these statuses (Course page + Today)
-3. M12: Today v0.2 (fading soon, weekly line), .ics export, pomodoro quick brain check
+1. M12: Today v0.2 — "Fading soon" (FSRS retrievability < 0.85 within 2 days), weekly summary line
+2. M12: reminders "Add to calendar" (.ics)
+3. M12: pomodoro end-of-session "Quick brain check" (3 questions from nodes touched) + summary line
 
 ## UI alignment (UI.md is the source of truth)
 - Done in branch `ui-align`: new tokens (UI.md §1), shared components (buttons incl. dark, pill chips,
@@ -182,6 +188,8 @@
 - No release tag pushed from the cloud session (outward-facing); user tags when ready.
 - Review: a session works on a snapshot of the queue taken at start; "Again" items reappear in the
   next session (not re-inserted mid-session). Today now shows the Due card (v0.2) since FSRS exists.
+- "Last 3 recall results" in SPEC §5.14 = the node's last 3 rows in results.jsonl of any kind
+  (Test me, blank-map recall, explain-back); each must be ≥ 80 %.
 - Derived slide data (extracted text + thumbnails) cached at `courses/<id>/derived/<source_id>/`
   (rebuildable from the source file; not in SPEC §3 layout).
 

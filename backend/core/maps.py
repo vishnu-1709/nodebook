@@ -147,7 +147,7 @@ def apply_structure(st: Storage, course_id: str, lecture_id: str, tree: TreeIn) 
 
 def patch_node(
     st: Storage, course_id: str, lecture_id: str, node_id: str,
-    label: str | None = None, status: Status | None = None, studied: bool = False,
+    label: str | None = None, status: Status | None = None, studied: bool = False, auto: bool = False,
 ) -> MapDoc:
     path = st.paths.map(course_id, lecture_id)
     with st.lock(path):
@@ -160,6 +160,8 @@ def patch_node(
         if status is not None:
             node.status = status
             node.status_mode = "manual"
+        if auto:
+            node.status_mode = "auto"
         if studied:
             node.last_studied_at = now_iso()
         save_map(st, course_id, lecture_id, doc)

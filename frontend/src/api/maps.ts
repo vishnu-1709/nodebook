@@ -37,7 +37,7 @@ export function useMapMutations(courseId: string, lectureId: string) {
     onError: () => void qc.invalidateQueries({ queryKey: lk.map(courseId, lectureId) }),
   });
   const patchNode = useMutation({
-    mutationFn: ({ id, ...body }: { id: string; label?: string; status?: Status; studied?: boolean }) =>
+    mutationFn: ({ id, ...body }: { id: string; label?: string; status?: Status; studied?: boolean; status_mode?: "auto" }) =>
       api<MapDoc>(`${base(courseId, lectureId)}/nodes/${id}`, { method: "PATCH", json: body }),
     onSuccess: put,
   });

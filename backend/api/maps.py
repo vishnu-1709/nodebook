@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 from backend.api.deps import get_ctx
@@ -16,6 +18,7 @@ router = APIRouter(prefix="/courses/{course_id}/lectures/{lecture_id}/map", tags
 class NodePatch(BaseModel):
     label: str | None = Field(default=None, max_length=200)
     status: Status | None = None
+    status_mode: Literal["auto"] | None = None  # back to automatic (manual is set by choosing a status)
     studied: bool = False
 
 
@@ -53,10 +56,16 @@ def patch_node(course_id: str, lecture_id: str, node_id: str, body: NodePatch, c
     if body.status is not None:
         log_usage(ctx, "node.status")
     try:
-        return svc.patch_node(ctx.storage, course_id, lecture_id, node_id, label=body.label,
-                              status=body.status, studied=body.studied)
+        doc = svc.patch_node(ctx.storage, course_id, lecture_id, node_id, label=body.label,
+                             status=body.status, studied=body.studied, auto=body.status_mode == "auto")
     except svc.MapEditError as exc:
         raise _edit_error(exc) from exc
+    if body.status_mode == "auto":
+        from backend.core.status import recompute
+
+        recompute(ctx.storage, course_id, lecture_id, [node_id])
+        doc = svc.load_map(ctx.storage, course_id, lecture_id)
+    return doc
 
 
 @router.post("/nodes", status_code=201)

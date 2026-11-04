@@ -91,8 +91,9 @@ export function CourseScreen() {
         ))}
       </div>
       <div className="tab-panel">
+        {tab === "lectures" && <CourseProgress progress={progress} />}
         {tab === "lectures" && (
-          <section className="card stack">
+          <section className="card stack lectures-card">
             <div className="card-head"><h2 className="grow">Lectures</h2>{lectures.length > 0 && <StatusLegend />}</div>
             {lectures.length > 0 && (
               <div className="lecture-rows">
@@ -119,6 +120,32 @@ export function CourseScreen() {
         }}>Delete course</button>
       </div>
     </div>
+  );
+}
+
+/** Course progress overview (SPEC §5.14): totals from the (performance-based) node statuses. */
+function CourseProgress({ progress }: { progress: Record<string, StatusCounts> }) {
+  const t: StatusCounts = { got_it: 0, revising: 0, confused: 0, not_started: 0, total: 0 };
+  for (const c of Object.values(progress)) {
+    t.got_it += c.got_it; t.revising += c.revising; t.confused += c.confused; t.not_started += c.not_started; t.total += c.total;
+  }
+  if (!t.total) return null;
+  const pct = Math.round((t.got_it / t.total) * 100);
+  return (
+    <section className="card stack progress-card" aria-label="Course progress">
+      <div className="card-head">
+        <h2 className="grow">Progress</h2>
+        <span className="text-2"><span className="next-big progress-big">{pct}%</span> of topics you've got</span>
+      </div>
+      <StatusBar c={t} />
+      <div className="legend">
+        <span><i className="sb-got" />Got it <strong className="mono">{t.got_it}</strong></span>
+        <span><i className="sb-revising" />Revising <strong className="mono">{t.revising}</strong></span>
+        <span><i className="sb-confused" />Confused <strong className="mono">{t.confused}</strong></span>
+        <span><i className="sb-none" />Not started <strong className="mono">{t.not_started}</strong></span>
+      </div>
+      <p className="xsmall muted">Statuses update from your Test me, recall and review results once a topic has 3 results. Setting one by hand keeps yours.</p>
+    </section>
   );
 }
 

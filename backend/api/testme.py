@@ -7,6 +7,7 @@ from backend.api.deps import get_ctx
 from backend.core import maps as map_svc
 from backend.core.context import AppContext
 from backend.core.schemas import ResultRecord
+from backend.core.status import MIN_RESULTS, StatusReason, explain, node_evidence, recompute
 from backend.core.usage import log_usage
 from backend.pipeline.testme import GradeItem, GradeResult, TestQuestion, generate_questions, grade, score_of
 
@@ -51,6 +52,7 @@ def grade_test(course_id: str, lecture_id: str, node_id: str, body: AnswersIn,
                        details={"items": [r.model_dump(mode="json") for r in results]})
     if body.save:
         st.append_jsonl(st.paths.results(course_id, lecture_id), rec)
+        recompute(st, course_id, lecture_id, [node_id])
         log_usage(ctx, "test_me.grade")
     return rec
 
@@ -70,8 +72,20 @@ def save_test(course_id: str, lecture_id: str, node_id: str, body: ResultsIn,
     rec = ResultRecord(node_id=node_id, kind="test_me", score=score_of(body.results),
                        details={"items": [r.model_dump(mode="json") for r in body.results]})
     st.append_jsonl(st.paths.results(course_id, lecture_id), rec)
+    recompute(st, course_id, lecture_id, [node_id])
     log_usage(ctx, "test_me.grade")
     return rec
+
+
+@router.get("/status")
+def status(course_id: str, lecture_id: str, node_id: str, ctx: AppContext = Depends(get_ctx)) -> StatusReason:
+    """Why the node has its automatic status (or why it doesn't yet)."""
+    d = explain(ctx.storage, course_id, lecture_id, node_id)
+    if d is None:
+        res, _ = node_evidence(ctx.storage, course_id, lecture_id, node_id)
+        return StatusReason(status="not_started", results=len(res),
+                            reason=f"Automatic status starts after {MIN_RESULTS} results ({len(res)} so far).")
+    return d
 
 
 @router.get("/history")
